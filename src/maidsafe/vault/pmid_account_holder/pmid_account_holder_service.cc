@@ -56,8 +56,8 @@ void PmidAccountHolderService::HandlePmidStatus(const nfs::GenericMessage& gener
     ThrowError(CommonErrors::invalid_parameter);
 
   PmidAccountHandler::AccountHealth health;
-  health = pmid_account_handler_.GetAccountHealth(
-               generic_message.source().node_id));
+  PmidName name(Identity(generic_message.source().node_id.string()));
+  health = pmid_account_handler_.GetAccountHealth(name);
   nfs::PmidHealth pmid_health(generic_message.source().node_id);
   pmid_health.health = health.health;
   pmid_health.available_size = health.size;

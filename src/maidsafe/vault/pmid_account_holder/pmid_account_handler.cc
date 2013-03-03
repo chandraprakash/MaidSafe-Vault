@@ -42,8 +42,8 @@ PmidAccountHandler::AccountHealth PmidAccountHandler::GetAccountHealth(const Pmi
   AccountHealth account_health;
   double status((pmid_record.stored_total_size - pmid_record.lost_total_size) /
                 pmid_record.stored_total_size);
-  account_health.health(100 * status);
-  account_health.size(status * pmid_record.claimed_available_size);
+  account_health.health = 100 * status;
+  account_health.size = status * pmid_record.claimed_available_size;
   return account_health;
 }
 
