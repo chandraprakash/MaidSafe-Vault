@@ -70,7 +70,8 @@ class PmidAccountHolderService {
                        int32_t size,
                        routing::ReplyFunctor mm_reply_functor);
   bool HandleReceivedSyncData(const NonEmptyString& serialised_account);
-
+  void HandlePmidStatus(const nfs::GenericMessage& generic_message,
+                        const routing::ReplyFunctor& reply_functor);
   void CheckAccounts();
   bool AssessRange(const PmidName& account_name,
                    PmidAccount::DataHolderStatus account_status,

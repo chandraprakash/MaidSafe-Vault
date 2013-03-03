@@ -31,6 +31,10 @@ namespace vault {
 
 class PmidAccountHandler {
  public:
+  struct AccountHealth {
+    int64_t size;
+    int health;
+  };
   explicit PmidAccountHandler(const boost::filesystem::path& vault_root_dir);
   // Account operations
   bool AddAccount(std::unique_ptr<PmidAccount> pmid_account);
@@ -40,7 +44,7 @@ class PmidAccountHandler {
   void SetDataHolderDown(const PmidName& account_name);
   void SetDataHolderGoingUp(const PmidName& account_name);
   void SetDataHolderUp(const PmidName& account_name);
-
+  AccountHealth GetAccountHealth(const PmidName& account_name);
   // Sync operations
   std::vector<PmidName> GetAccountNames() const;
   std::vector<PmidName> GetArchivedAccountNames() const;

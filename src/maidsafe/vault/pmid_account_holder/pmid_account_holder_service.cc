@@ -12,7 +12,8 @@
 #include "maidsafe/vault/pmid_account_holder/pmid_account_holder_service.h"
 
 #include "maidsafe/common/error.h"
-
+#include "maidsafe/nfs/generic_message.h"
+#include "maidsafe/nfs/pmid_health.h"
 #include "maidsafe/vault/pmid_account_holder/pmid_account_pb.h"
 
 
@@ -34,6 +35,34 @@ PmidAccountHolderService::PmidAccountHolderService(const passport::Pmid& pmid,
       pmid_account_handler_(vault_root_dir),
       nfs_(routing, pmid) {}
 
+void PmidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& generic_message,
+                                                    const routing::ReplyFunctor& reply_functor) {
+// HandleNewComer(p_maid);
+  nfs::GenericMessage::Action action(generic_message.action());
+  switch (action) {
+    case nfs::GenericMessage::Action::kGetPmidHealth:
+      return HandlePmidStatus(generic_message, reply_functor);
+//    case nfs::GenericMessage::Action::kSynchronise:
+//      return HandleSyncMessage(generic_message, reply_functor);
+    default:
+      LOG(kError) << "Unhandled Post action type";
+  }
+}
+void PmidAccountHolderService::HandlePmidStatus(const nfs::GenericMessage& generic_message,
+                                                const routing::ReplyFunctor& reply_functor) {
+
+  if (generic_message.source().persona != nfs::Persona::kMaidAccountHolder ||
+      generic_message.destination_persona() != nfs::Persona::kPmidAccountHolder)
+    ThrowError(CommonErrors::invalid_parameter);
+
+  PmidAccountHandler::AccountHealth health;
+  health = pmid_account_handler_.GetAccountHealth(
+               generic_message.source().node_id));
+  nfs::PmidHealth pmid_health(generic_message.source().node_id);
+  pmid_health.health = health.health;
+  pmid_health.available_size = health.size;
+  reply_functor(pmid_health.Serialise().string());
+}
 
 void PmidAccountHolderService::TriggerSync(
     /*const std::vector<routing::NodeInfo>& new_close_nodes*/) {

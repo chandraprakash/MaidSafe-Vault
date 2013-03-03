@@ -72,8 +72,6 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
       break;
     case nfs::GenericMessage::Action::kConnect:
       break;
-    case nfs::GenericMessage::Action::kGetPmidSize:
-      break;
     case nfs::GenericMessage::Action::kNodeDown:
       break;
     case nfs::GenericMessage::Action::kSynchronise:

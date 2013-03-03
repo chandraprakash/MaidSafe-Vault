@@ -12,7 +12,7 @@
 #include "maidsafe/vault/pmid_account_holder/pmid_account_handler.h"
 
 #include "boost/filesystem/operations.hpp"
-
+#include "maidsafe/vault/pmid_account_holder/pmid_record.h"
 
 namespace maidsafe {
 
@@ -29,6 +29,22 @@ PmidAccountHandler::PmidAccountHandler(const boost::filesystem::path& vault_root
   } else {
     boost::filesystem::create_directories(kPmidAccountsRoot_);
   }
+}
+PmidAccountHandler::AccountHealth PmidAccountHandler::GetAccountHealth(const PmidName& account_name) {
+  PmidRecord pmid_record;
+  {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::FindAccount(pmid_accounts_, account_name));
+  if (itr == pmid_accounts_.end())
+    ThrowError(VaultErrors::no_such_account);
+  pmid_record = (*itr)->pmid_record();
+  }
+  AccountHealth account_health;
+  double status((pmid_record.stored_total_size - pmid_record.lost_total_size) /
+                pmid_record.stored_total_size);
+  account_health.health(100 * status);
+  account_health.size(status * pmid_record.claimed_available_size);
+  return account_health;
 }
 
 bool PmidAccountHandler::AddAccount(std::unique_ptr<PmidAccount> pmid_account) {
