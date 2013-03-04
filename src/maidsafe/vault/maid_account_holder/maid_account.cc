@@ -198,7 +198,7 @@ MaidAccount::serialised_info_type  MaidAccount::SerialiseAccountSyncInfo() const
 
 std::pair<MaidAccount::AccountInfo,
           std::vector<boost::filesystem::path>> MaidAccount::ParseAccountSyncInfo(
-    const serialised_info_type& /*serialised_info*/) const {
+    const serialised_info_type& /*serialised_info*/) {
   return std::make_pair(MaidAccount::AccountInfo(), std::vector<boost::filesystem::path>());
 }
 

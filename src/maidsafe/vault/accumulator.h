@@ -94,7 +94,7 @@ class Accumulator {
   // Serialises all handled requests for the given account name.
   serialised_requests Serialise(const Name& name) const;
   // Parses the list of serialised handled requests.
-  std::vector<HandledRequest> Parse(const serialised_requests& serialised_requests_in) const;
+  static std::vector<HandledRequest> Parse(const serialised_requests& serialised_requests_in);
 
   friend class test::AccumulatorTest_BEH_PushSingleResult_Test;
   friend class test::AccumulatorTest_BEH_PushSingleResultThreaded_Test;

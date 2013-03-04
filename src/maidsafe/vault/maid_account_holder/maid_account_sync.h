@@ -30,7 +30,7 @@ class MaidAccountSync {
   void AddDownloadedFile(boost::filesystem::path file_name, const NonEmptyString& file_contents);
 
   std::vector<boost::filesystem::path> GetFileRequests(const NodeId& node_id);
-  bool is_ready_for_merge();
+  bool IsReadyForMerge();
   bool MergeSyncResults(std::unique_ptr<MaidAccount>& account, Accumulator<MaidName>& accumulator);
 
  private:
@@ -40,6 +40,7 @@ class MaidAccountSync {
     std::vector<Accumulator<passport::PublicMaid::name_type>::HandledRequest> handled_requests;
     std::vector<boost::filesystem::path> shared_file_names, requested_file_names;
   };
+  std::vector<boost::filesystem::path> GetRequiredFileNames();
 
   mutable std::mutex mutex_;
   const MaidName kMaidName_;

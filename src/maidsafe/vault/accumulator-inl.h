@@ -264,7 +264,7 @@ typename Accumulator<Name>::serialised_requests Accumulator<Name>::Serialise(
 
 template<typename Name>
 std::vector<typename Accumulator<Name>::HandledRequest> Accumulator<Name>::Parse(
-    const typename Accumulator<Name>::serialised_requests& serialised_requests_in) const {
+    const typename Accumulator<Name>::serialised_requests& serialised_requests_in) {
   std::vector<typename Accumulator<Name>::HandledRequest> handled_requests;
   protobuf::HandledRequests proto_handled_requests;
   if (!proto_handled_requests.ParseFromString(serialised_requests_in->string()))

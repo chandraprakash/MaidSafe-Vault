@@ -16,8 +16,9 @@ message GetArchiveFiles {
 }
 
 message SyncInfo {
-  required bytes maid_account = 1;
-  optional bytes accumulator_entries = 2;
+  required bytes maid_account_name = 1;
+  required bytes maid_account = 2;
+  optional bytes accumulator_entries = 3;
 }
 
 message SyncInfoResponse {
