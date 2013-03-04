@@ -29,6 +29,27 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
+template<typename Data>
+int32_t CalculateCost(const Data& data) {
+  static_assert(!std::is_same<Data, passport::PublicAnmaid>::value, "Cost of Anmaid should be 0.");
+  static_assert(!std::is_same<Data, passport::PublicMaid>::value, "Cost of Maid should be 0.");
+  static_assert(!std::is_same<Data, passport::PublicPmid>::value, "Cost of Pmid should be 0.");
+  return static_cast<int32_t>(MaidAccountHolderService::DefaultPaymentFactor() *
+                              data.content.string().size());
+}
+
+// Dan moved the implementation of these to the .cc file to acoid multiple definition problems at
+// link time.
+int32_t CalculateCost(const passport::PublicAnmaid&);
+
+int32_t CalculateCost(const passport::PublicMaid&);
+
+int32_t CalculateCost(const passport::PublicPmid&);
+
+}  // namespace detail
+
 template<typename Data>
 void MaidAccountHolderService::HandleDataMessage(const nfs::DataMessage& data_message,
                                                  const routing::ReplyFunctor& reply_functor) {
@@ -65,13 +86,12 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
         kPutRepliesSuccessesRequired_,
         [this, account_name, data_name, reply_functor](nfs::Reply overall_result) {
             this->HandlePutResult<Data>(overall_result, account_name, data_name, reply_functor,
-                                  is_unique_on_network<Data>());
+                                  overall_result.IsSuccess(), is_unique_on_network<Data>());
         }));
     // TODO(Fraser#5#): 2013-02-13 - Have PutToAccount return percentage or amount remaining so
     // if it falls below a threshold, we can trigger getting updated account info from the PAHs
     // (not too frequently), & alert the client by returning an "error" via client_reply_functor.
-    int32_t size =
-        static_cast<int32_t>(kDefaultPaymentFactor_ * data_message.data().content.string().size());
+    auto size(detail::CalculateCost(data_message.data()));
     PutToAccount<Data>(account_name, data_name, size, is_payable<Data>());
     on_scope_exit strong_guarantee([this, account_name, data_name] {
         try {
@@ -86,7 +106,9 @@ void MaidAccountHolderService::HandlePut(const nfs::DataMessage& data_message,
              [put_op](std::string serialised_reply) {
                  nfs::HandleOperationReply(put_op, serialised_reply);
              });
-    SendEarlySuccessReply<Data>(data_message, reply_functor, is_unique_on_network<Data>());
+    SendEarlySuccessReply<Data>(data_message, reply_functor,
+                                false, is_unique_on_network<Data>());
+    // TODO(dirvine) check above false value is OK
     strong_guarantee.Release();
     return;
   }
@@ -141,8 +163,11 @@ typename Data::name_type MaidAccountHolderService::GetDataName(
 template<typename Data>
 void MaidAccountHolderService::SendEarlySuccessReply(const nfs::DataMessage& data_message,
                                                      const routing::ReplyFunctor& reply_functor,
+                                                     bool low_space,
                                                      std::false_type) {
   nfs::Reply reply(CommonErrors::success);
+  if (low_space)
+    reply = VaultErrors::low_space;
   reply_functor(reply.Serialise()->string());
   std::lock_guard<std::mutex> lock(accumulator_mutex_);
   accumulator_.SetHandled(data_message, reply.error());
@@ -153,7 +178,8 @@ void MaidAccountHolderService::PutToAccount(const MaidName& account_name,
                                             const typename Data::name_type& data_name,
                                             int32_t cost,
                                             std::true_type) {
-  maid_account_handler_.PutData<Data>(account_name, data_name, cost);
+  maid_account_handler_.PutData<Data>(account_name, data_name, cost,
+                                      detail::AccountRequired<Data>());
 }
 
 template<typename Data>
@@ -177,9 +203,13 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
                                                const MaidName& /*account_name*/,
                                                const typename Data::name_type& /*data_name*/,
                                                routing::ReplyFunctor client_reply_functor,
+                                               bool low_space,
                                                std::true_type) {
   if (overall_result.IsSuccess()) {
-    client_reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
+    nfs::Reply reply(CommonErrors::success);
+    if (low_space)
+      reply = VaultErrors::low_space;
+    client_reply_functor(reply.Serialise()->string());
   } else {
     client_reply_functor(overall_result.Serialise()->string());
   }
@@ -190,6 +220,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
                                                const MaidName& account_name,
                                                const typename Data::name_type& data_name,
                                                routing::ReplyFunctor /*client_reply_functor*/,
+                                               bool /*low_space*/,
                                                std::false_type) {
   try {
     if (overall_result.IsSuccess()) {

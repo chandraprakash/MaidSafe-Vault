@@ -57,6 +57,7 @@ struct PmidTotals {
 
 class MaidAccount {
  public:
+  enum class Status { kOk, kLowSpace };
   typedef MaidName name_type;
   typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountTag> serialised_type;
   typedef TaggedValue<NonEmptyString, struct SerialisedMaidAccountInfoTag> serialised_info_type;
@@ -98,7 +99,7 @@ class MaidAccount {
 
   // This offers the strong exception guarantee
   template<typename Data>
-  void PutData(const typename Data::name_type& name, int32_t cost);
+  Status PutData(const typename Data::name_type& name, int32_t cost);
   // This offers the strong exception guarantee
   template<typename Data>
   void DeleteData(const typename Data::name_type& name);
@@ -121,7 +122,7 @@ class MaidAccount {
   std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
 
   template<typename Data>
-  void DoPutData(const typename Data::name_type& name, int32_t cost);
+  Status DoPutData(const typename Data::name_type& name, int32_t cost);
 
   const name_type kMaidName_;
   GetTagValueAndIdentityVisitor type_and_name_visitor_;
