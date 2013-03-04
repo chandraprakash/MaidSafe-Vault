@@ -9,13 +9,7 @@
  *  written permission of the board of directors of MaidSafe.net.                                  *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_RECORD_H_
-#define MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_RECORD_H_
-
-#include <cstdint>
-
-#include "maidsafe/common/types.h"
-
+#include "maidsafe/vault/post_policies.h"
 #include "maidsafe/vault/types.h"
 
 
@@ -23,27 +17,19 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace protobuf { class PmidRecord; }
-
-struct PmidRecord {
- public:
-  PmidRecord();
-  explicit PmidRecord(const PmidName& pmid_name_in);
-  explicit PmidRecord(const protobuf::PmidRecord& proto_pmid_record);
-  protobuf::PmidRecord ToProtobuf() const;
-  PmidRecord(const PmidRecord& other);
-  PmidRecord& operator=(const PmidRecord& other);
-  PmidRecord(PmidRecord&& other);
-  PmidRecord& operator=(PmidRecord&& other);
-
-  PmidName pmid_name;
-  int64_t historic_stored_space;
-  int64_t historic_lost_space;
-  int64_t claimed_available_size;
-};
+void MaidAccountHolderManagementPolicy::GetPmidHealth(const PmidName& pmid_name,
+                                                      const routing::ResponseFunctor& callback) {
+  nfs::GenericMessage generic_message(nfs::GenericMessage::Action::kGetPmidHealth,
+                                      nfs::Persona::kPmidAccountHolder,
+                                      kSource_,
+                                      pmid_name.data,
+                                      NonEmptyString());
+  nfs::Message message(nfs::GenericMessage::message_type_identifier,
+                       generic_message.Serialise().data);
+  routing_.SendGroup(NodeId(generic_message.name().string()), message.Serialise()->string(),
+                     false, callback);
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_PMID_ACCOUNT_HOLDER_PMID_RECORD_H_

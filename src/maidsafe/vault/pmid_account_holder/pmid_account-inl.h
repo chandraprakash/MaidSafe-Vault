@@ -28,19 +28,18 @@ void PmidAccount::PutData(const typename Data::name_type& name, int32_t size) {
 
   DataElement data_element(GetDataNameVariant(Data::type_enum_value(), Identity(name)), size);
   recent_data_stored_.push_back(data_element);
-  ++pmid_record_.stored_count;
-  pmid_record_.stored_total_size += size;
+  pmid_record_.historic_stored_space += size;
 }
 
 template<typename Data>
 void PmidAccount::DeleteData(const typename Data::name_type& name) {
-  for (auto itr(recent_data_stored_.begin()); itr != recent_data_stored_.end(); ++itr)
+  for (auto itr(recent_data_stored_.begin()); itr != recent_data_stored_.end(); ++itr) {
     if (detail::IsDataElement<Data>(name, itr->data_name_variant)) {
-      pmid_record_.stored_count--;
-      pmid_record_.stored_total_size -= itr->size;
+      pmid_record_.historic_stored_space -= itr->size;
       recent_data_stored_.erase(itr);
       archive_.Delete<Data>(name);
     }
+  }
 }
 
 

@@ -41,27 +41,38 @@ void PmidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
   nfs::GenericMessage::Action action(generic_message.action());
   switch (action) {
     case nfs::GenericMessage::Action::kGetPmidHealth:
-      return HandlePmidStatus(generic_message, reply_functor);
+      return HandlePmidHealth(generic_message, reply_functor);
 //    case nfs::GenericMessage::Action::kSynchronise:
 //      return HandleSyncMessage(generic_message, reply_functor);
     default:
       LOG(kError) << "Unhandled Post action type";
   }
 }
-void PmidAccountHolderService::HandlePmidStatus(const nfs::GenericMessage& generic_message,
+void PmidAccountHolderService::HandlePmidHealth(const nfs::GenericMessage& generic_message,
                                                 const routing::ReplyFunctor& reply_functor) {
+  try {
+    if (generic_message.source().persona != nfs::Persona::kMaidAccountHolder ||
+        generic_message.destination_persona() != nfs::Persona::kPmidAccountHolder)
+      ThrowError(CommonErrors::invalid_parameter);
 
-  if (generic_message.source().persona != nfs::Persona::kMaidAccountHolder ||
-      generic_message.destination_persona() != nfs::Persona::kPmidAccountHolder)
-    ThrowError(CommonErrors::invalid_parameter);
-
-  PmidAccountHandler::AccountHealth health;
-  PmidName name(Identity(generic_message.source().node_id.string()));
-  health = pmid_account_handler_.GetAccountHealth(name);
-  nfs::PmidHealth pmid_health(generic_message.source().node_id);
-  pmid_health.health = health.health;
-  pmid_health.available_size = health.size;
-  reply_functor(pmid_health.Serialise().string());
+    PmidAccountHandler::AccountHealth health;
+    PmidName name(Identity(generic_message.name()));
+    health = pmid_account_handler_.GetAccountHealth(name);
+    nfs::PmidHealth pmid_health(name);
+    pmid_health.health = health.health;
+    pmid_health.offered_space = health.offered_space;
+    pmid_health.online = routing_.IsConnectedVault(NodeId(name->string()));
+    nfs::Reply reply(CommonErrors::success, pmid_health.Serialise());
+    reply_functor(reply.Serialise()->string());
+  }
+  catch(const maidsafe_error& error) {
+    nfs::Reply reply(error, generic_message.Serialise());
+    reply_functor(reply.Serialise()->string());
+  }
+  catch(...) {
+    nfs::Reply reply(CommonErrors::unknown, generic_message.Serialise());
+    reply_functor(reply.Serialise()->string());
+  }
 }
 
 void PmidAccountHolderService::TriggerSync(

@@ -92,8 +92,8 @@ class PmidAccount {
 
   name_type name() const { return pmid_record_.pmid_name; }
   DataHolderStatus data_holder_status() const { return data_holder_status_; }
-  int64_t total_data_stored_by_pmids() const { return pmid_record_.stored_total_size; }
-  PmidRecord pmid_record() { return pmid_record_; }
+  PmidRecord pmid_record() const { return pmid_record_; }
+
  private:
   PmidAccount(const PmidAccount&);
   PmidAccount& operator=(const PmidAccount&);

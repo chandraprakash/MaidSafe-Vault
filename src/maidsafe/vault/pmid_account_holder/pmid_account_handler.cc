@@ -11,8 +11,11 @@
 
 #include "maidsafe/vault/pmid_account_holder/pmid_account_handler.h"
 
+#include <algorithm>
+
 #include "boost/filesystem/operations.hpp"
 #include "maidsafe/vault/pmid_account_holder/pmid_record.h"
+
 
 namespace maidsafe {
 
@@ -33,17 +36,18 @@ PmidAccountHandler::PmidAccountHandler(const boost::filesystem::path& vault_root
 PmidAccountHandler::AccountHealth PmidAccountHandler::GetAccountHealth(const PmidName& account_name) {
   PmidRecord pmid_record;
   {
-  std::lock_guard<std::mutex> lock(mutex_);
-  auto itr(detail::FindAccount(pmid_accounts_, account_name));
-  if (itr == pmid_accounts_.end())
-    ThrowError(VaultErrors::no_such_account);
-  pmid_record = (*itr)->pmid_record();
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto itr(detail::FindAccount(pmid_accounts_, account_name));
+    if (itr == pmid_accounts_.end())
+      ThrowError(VaultErrors::no_such_account);
+    pmid_record = (*itr)->pmid_record();
   }
   AccountHealth account_health;
-  double status((pmid_record.stored_total_size - pmid_record.lost_total_size) /
-                pmid_record.stored_total_size);
+  int64_t delta(std::max(pmid_record.historic_stored_space - pmid_record.historic_lost_space,
+                         int64_t(0)));
+  double status(delta / pmid_record.historic_stored_space);
   account_health.health = 100 * status;
-  account_health.size = status * pmid_record.claimed_available_size;
+  account_health.offered_space = (status * pmid_record.claimed_available_size) + delta;
   return account_health;
 }
 

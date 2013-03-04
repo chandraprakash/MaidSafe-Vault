@@ -39,6 +39,7 @@ class VaultPostPolicy : public SyncPolicy, public VaultManagement {
         VaultManagement(routing, pmid) {}
 };
 
+
 template <nfs::Persona source_persona>
 class SyncPolicy {
  public:
@@ -85,6 +86,21 @@ class SyncPolicy {
   const passport::Pmid kPmid_;
 };
 
+class MaidAccountHolderManagementPolicy {
+ public:
+  MaidAccountHolderManagementPolicy(routing::Routing& routing, const passport::Pmid& pmid)
+      : routing_(routing),
+        kSource_(nfs::Persona::kMaidAccountHolder, routing_.kNodeId()),
+        kPmid_(pmid) {}
+  void GetPmidHealth(const passport::PublicPmid::name_type& pmid_name,
+                     const routing::ResponseFunctor& callback);
+
+ private:
+  routing::Routing& routing_;
+  const nfs::PersonaId kSource_;
+  const passport::Pmid kPmid_;
+};
+
 template <nfs::Persona source_persona>
 class VaultManagement {
  public:
@@ -118,7 +134,7 @@ class VaultManagement {
 };
 
 typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMaidAccountHolder>,
-    VaultManagement<nfs::Persona::kMaidAccountHolder>> MaidAccountHolderPostPolicy;
+                        MaidAccountHolderManagementPolicy> MaidAccountHolderPostPolicy;
 
 typedef VaultPostPolicy<SyncPolicy<nfs::Persona::kMetadataManager>,
     VaultManagement<nfs::Persona::kMetadataManager>> MetadataManagerPostPolicy;

@@ -32,8 +32,8 @@ namespace vault {
 class PmidAccountHandler {
  public:
   struct AccountHealth {
-    int64_t size;
-    int health;
+    int32_t health;
+    int64_t offered_space;
   };
   explicit PmidAccountHandler(const boost::filesystem::path& vault_root_dir);
   // Account operations

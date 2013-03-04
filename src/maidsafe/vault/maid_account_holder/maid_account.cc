@@ -56,8 +56,6 @@ PmidTotals& PmidTotals::operator=(PmidTotals&& other) {
   return *this;
 }
 
-
-
 MaidAccount::PutDataDetails::PutDataDetails() : data_name_variant(), cost(0) {}
 
 
