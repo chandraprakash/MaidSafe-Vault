@@ -28,6 +28,13 @@ namespace maidsafe {
 
 namespace vault {
 
+MaidAccountSync::MaidAccountSync(const MaidName& maid_name)
+    : mutex_(),
+      kMaidName_(maid_name),
+      downloaded_files_(),
+      sync_updates_(),
+      is_ready_for_merge_(false) {}
+
 MaidAccountSync::SyncInfoUpdate::SyncInfoUpdate(
     const NodeId& source_id_in,
     const MaidAccount::AccountInfo& account_info_in,

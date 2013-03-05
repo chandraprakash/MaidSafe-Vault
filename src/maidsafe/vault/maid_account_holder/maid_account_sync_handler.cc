@@ -32,7 +32,7 @@ MaidAccountSyncHandler::MaidAccountSyncHandler(const boost::filesystem::path& va
 }
 
 nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(
-    const NonEmptyString& serialised_sync_info, const NodeId& /*source_id*/) {
+    const NonEmptyString& serialised_sync_info, const NodeId& source_id) {
   protobuf::SyncInfo sync_info;
   if (!sync_info.ParseFromString(serialised_sync_info.string())) {
     LOG(kError) << "Failed to parse reply";
@@ -44,15 +44,21 @@ nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(
   Accumulator<MaidName>::serialised_requests serialised_request(
                                         NonEmptyString(sync_info.accumulator_entries()));
   MaidName maid_name(Identity((sync_info.maid_name())));
+  std::vector<boost::filesystem::path> required_file;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     auto itr = std::find_if(maid_accounts_sync_.begin(),
                             maid_accounts_sync_.end(),
-                            [=](const MaidAccountSync& maid_accounts_sync) {
-                                return (maid_accounts_sync.kMaidName() == maid_name);
+                            [=](const std::unique_ptr<MaidAccountSync>& maid_accounts_sync) {
+                                return (maid_accounts_sync->kMaidName() == maid_name);
                             });
     if (itr == maid_accounts_sync_.end()) { //  Sync for account not exists
-
+      std::unique_ptr<MaidAccountSync> maid_account_sync(new MaidAccountSync(maid_name));
+      required_file = maid_account_sync->AddSyncInfoUpdate(source_id, serialised_account_info,
+                                                           serialised_request);
+      maid_accounts_sync_.push_back(std::move(maid_account_sync));
+    } else {
+      required_file = (*itr)->AddSyncInfoUpdate(source_id, serialised_account_info, serialised_request);
     }
   }
   return nfs::Reply(CommonErrors::success);

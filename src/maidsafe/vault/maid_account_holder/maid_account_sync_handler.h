@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_SYNC_HANDLER_H_
 #define MAIDSAFE_VAULT_MAID_ACCOUNT_HOLDER_MAID_ACCOUNT_SYNC_HANDLER_H_
 
+#include <memory>
 #include <mutex>
 #include <vector>
 
@@ -42,7 +43,7 @@ class MaidAccountSyncHandler {
 
   mutable std::mutex mutex_;
   const boost::filesystem::path kMaidAccountsSyncRoot_;
-  std::vector<MaidAccountSync> maid_accounts_sync_;
+  std::vector<std::unique_ptr<MaidAccountSync>> maid_accounts_sync_;
 };
 
 }  // namespace vault

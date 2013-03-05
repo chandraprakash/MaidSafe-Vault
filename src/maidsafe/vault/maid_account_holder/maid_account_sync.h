@@ -21,6 +21,7 @@ namespace vault {
 
 class MaidAccountSync {
  public:
+  MaidAccountSync(const MaidName& maid_name);
 
   std::vector<boost::filesystem::path> AddSyncInfoUpdate(
     const NodeId& source_id,
@@ -35,6 +36,8 @@ class MaidAccountSync {
   MaidName kMaidName() const {return kMaidName_; }
 
  private:
+  MaidAccountSync(MaidAccountSync&& other);
+
   struct SyncInfoUpdate {
     SyncInfoUpdate(
         const NodeId& sourc_id_in,
