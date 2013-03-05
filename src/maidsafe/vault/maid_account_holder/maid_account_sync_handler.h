@@ -30,7 +30,8 @@ namespace vault {
 class MaidAccountSyncHandler {
  public:
   explicit MaidAccountSyncHandler(const boost::filesystem::path& vault_root_dir);
-  nfs::Reply HandleReceivedSyncInfo(const NonEmptyString& serialised_account);
+  nfs::Reply HandleReceivedSyncInfo(const NonEmptyString& serialised_sync_info,
+                                    const NodeId& source_id);
   nfs::Reply HandleSyncArchiveFiles(const NonEmptyString& archive_files);
 
  private:
@@ -39,6 +40,7 @@ class MaidAccountSyncHandler {
   MaidAccountSyncHandler(MaidAccountSyncHandler&&);
   MaidAccountSyncHandler& operator=(MaidAccountSyncHandler&&);
 
+  mutable std::mutex mutex_;
   const boost::filesystem::path kMaidAccountsSyncRoot_;
   std::vector<MaidAccountSync> maid_accounts_sync_;
 };

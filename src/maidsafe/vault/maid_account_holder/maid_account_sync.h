@@ -23,20 +23,21 @@ class MaidAccountSync {
  public:
 
   std::vector<boost::filesystem::path> AddSyncInfoUpdate(
-    const NodeId& node_id,
+    const NodeId& source_id,
     const MaidAccount::serialised_info_type& serialised_account_info,
-    const Accumulator<passport::PublicMaid::name_type>::serialised_requests& serialised_request);
+    const Accumulator<MaidName>::serialised_requests& serialised_request);
 
   void AddDownloadedFile(boost::filesystem::path file_name, const NonEmptyString& file_contents);
 
-  std::vector<boost::filesystem::path> GetFileRequests(const NodeId& node_id);
+  std::vector<boost::filesystem::path> GetFileRequests(const NodeId& source_id);
   bool IsReadyForMerge();
   bool MergeSyncResults(std::unique_ptr<MaidAccount>& account, Accumulator<MaidName>& accumulator);
+  MaidName kMaidName() const {return kMaidName_; }
 
  private:
   struct SyncInfoUpdate {
     SyncInfoUpdate(
-        const NodeId& node_id_in,
+        const NodeId& sourc_id_in,
         const MaidAccount::AccountInfo& account_info_in,
         const std::vector<Accumulator<passport::PublicMaid::name_type>::HandledRequest>
             handled_requests_in,
@@ -47,9 +48,9 @@ class MaidAccountSync {
     SyncInfoUpdate(SyncInfoUpdate&& other);
     SyncInfoUpdate& operator=(SyncInfoUpdate&& other);
 
-    NodeId node_id;
+    NodeId source_id;
     MaidAccount::AccountInfo account_info;
-    std::vector<Accumulator<passport::PublicMaid::name_type>::HandledRequest> handled_requests;
+    std::vector<Accumulator<MaidName>::HandledRequest> handled_requests;
     std::vector<boost::filesystem::path> shared_file_names, requested_file_names;
   };
   std::vector<boost::filesystem::path> GetRequiredFileNames();

@@ -140,6 +140,7 @@ class MaidAccountHolderService {
                                   const MaidName& account_name,
                                   std::shared_ptr<SharedResponse> shared_response);
   void HandleReceivedSyncInfo(const NonEmptyString& serialised_account,
+                              const NodeId& source_id,
                               const routing::ReplyFunctor& reply_functor);
 //   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
 //   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,

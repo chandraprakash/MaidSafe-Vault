@@ -15,6 +15,7 @@
 
 #include "maidsafe/common/error.h"
 
+#include "maidsafe/vault/sync_pb.h"
 #include "maidsafe/vault/utils.h"
 
 
@@ -30,7 +31,30 @@ MaidAccountSyncHandler::MaidAccountSyncHandler(const boost::filesystem::path& va
   fs::exists(kMaidAccountsSyncRoot_) || fs::create_directory(kMaidAccountsSyncRoot_);
 }
 
-nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(const NonEmptyString& /*serialised_account*/) {
+nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(
+    const NonEmptyString& serialised_sync_info, const NodeId& /*source_id*/) {
+  protobuf::SyncInfo sync_info;
+  if (!sync_info.ParseFromString(serialised_sync_info.string())) {
+    LOG(kError) << "Failed to parse reply";
+    return nfs::Reply(CommonErrors::parsing_error);
+  }
+
+  MaidAccount::serialised_info_type serialised_account_info(
+                                        NonEmptyString(sync_info.maid_account()));
+  Accumulator<MaidName>::serialised_requests serialised_request(
+                                        NonEmptyString(sync_info.accumulator_entries()));
+  MaidName maid_name(Identity((sync_info.maid_name())));
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto itr = std::find_if(maid_accounts_sync_.begin(),
+                            maid_accounts_sync_.end(),
+                            [=](const MaidAccountSync& maid_accounts_sync) {
+                                return (maid_accounts_sync.kMaidName() == maid_name);
+                            });
+    if (itr == maid_accounts_sync_.end()) { //  Sync for account not exists
+
+    }
+  }
   return nfs::Reply(CommonErrors::success);
 }
 
