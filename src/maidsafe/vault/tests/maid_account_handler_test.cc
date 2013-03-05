@@ -1,27 +1,26 @@
-///******************************************************************************
-//*  Copyright 2012 maidsafe.net limited                                        *
-//*                                                                             *
-//*  The following source code is property of maidsafe.net limited and is not   *
-//*  meant for external use.  The use of this code is governed by the licence   *
-//*  file licence.txt found in the root of this directory and also on           *
-//*  www.maidsafe.net.                                                          *
-//*                                                                             *
-//*  You are not free to copy, amend or otherwise use this source code without  *
-//*  the explicit written permission of the board of directors of maidsafe.net. *
-//******************************************************************************/
+/******************************************************************************
+*  Copyright 2012 maidsafe.net limited                                        *
+*                                                                             *
+*  The following source code is property of maidsafe.net limited and is not   *
+*  meant for external use.  The use of this code is governed by the licence   *
+*  file licence.txt found in the root of this directory and also on           *
+*  www.maidsafe.net.                                                          *
+*                                                                             *
+*  You are not free to copy, amend or otherwise use this source code without  *
+*  the explicit written permission of the board of directors of maidsafe.net. *
+******************************************************************************/
 
-//#include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
 
-//#include <vector>
+#include <vector>
 
-//#include "maidsafe/common/test.h"
+#include "maidsafe/common/test.h"
 
-//namespace maidsafe {
+namespace maidsafe {
 
-//namespace vault {
+namespace vault {
 
-//namespace test {
-
+namespace test {
 
 //class MaidAccountHandlerTest : public testing::Test {
 // public:
@@ -381,8 +380,7 @@
 //               int32_t cost) {
 //    this->maid_account_handler_.template PutData<Data>(account_name,
 //                                                       data_name,
-//                                                       cost,
-//                                                       MaidAccountHandler::RequireAccount);
+//                                                       cost);
 //  }
 
 //  void DeleteData(const MaidName& account_name, const typename Data::name_type& data_name) {
@@ -508,8 +506,8 @@
 //INSTANTIATE_TYPED_TEST_CASE_P(All, MaidAccountHandlerTypedTest, AllTypes);
 
 
-//}  //  namespace test
+}  //  namespace test
 
-//}  //  namespace vault
+}  //  namespace vault
 
-//}  //  namespace maidsafe
+}  //  namespace maidsafe
