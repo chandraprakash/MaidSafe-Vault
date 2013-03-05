@@ -28,19 +28,66 @@ namespace maidsafe {
 
 namespace vault {
 
+MaidAccountSync::SyncInfoUpdate::SyncInfoUpdate(
+    const NodeId& node_id_in,
+    const MaidAccount::AccountInfo& account_info_in,
+    const std::vector<Accumulator<passport::PublicMaid::name_type>::HandledRequest>
+        handled_requests_in,
+    const std::vector<boost::filesystem::path> shared_file_names_in,
+    const std::vector<boost::filesystem::path> requested_file_names_in)
+    : node_id(node_id_in),
+      account_info(account_info_in),
+      handled_requests(handled_requests_in),
+      shared_file_names(shared_file_names_in),
+      requested_file_names(requested_file_names_in) {}
+
+MaidAccountSync::SyncInfoUpdate::SyncInfoUpdate(const SyncInfoUpdate& other)
+    : node_id(other.node_id),
+      account_info(other.account_info),
+      handled_requests(other.handled_requests),
+      shared_file_names(other.shared_file_names),
+      requested_file_names(other.requested_file_names) {}
+
+MaidAccountSync::SyncInfoUpdate& MaidAccountSync::SyncInfoUpdate::operator=(
+    const SyncInfoUpdate& other) {
+  node_id = other.node_id;
+  account_info = other.account_info;
+  handled_requests = other.handled_requests;
+  shared_file_names = other.shared_file_names;
+  requested_file_names = other.requested_file_names;
+  return *this;
+}
+
+MaidAccountSync::SyncInfoUpdate::SyncInfoUpdate(SyncInfoUpdate&& other)
+    : node_id(std::move(other.node_id)),
+      account_info(std::move(other.account_info)),
+      handled_requests(std::move(other.handled_requests)),
+      shared_file_names(std::move(other.shared_file_names)),
+      requested_file_names(std::move(other.requested_file_names)) {}
+
+MaidAccountSync::SyncInfoUpdate&
+MaidAccountSync::SyncInfoUpdate::operator=(SyncInfoUpdate&& other) {
+  node_id = std::move(other.node_id);
+  account_info = std::move(other.account_info);
+  handled_requests = std::move(other.handled_requests);
+  shared_file_names = std::move(other.shared_file_names);
+  requested_file_names = std::move(other.requested_file_names);
+  return *this;
+}
+
 std::vector<boost::filesystem::path> MaidAccountSync::AddSyncInfoUpdate(
     const NodeId& node_id,
-    const MaidAccount::serialised_info_type& /*serialised_account_info*/,
+    const MaidAccount::serialised_info_type& serialised_account_info,
     const Accumulator<passport::PublicMaid::name_type>::serialised_requests& serialised_request) {
 
-  SyncInfoUpdate sync_update;
-  sync_update.node_id = node_id;
-//  auto account_info_and_file_names = MaidAccount::ParseAccountSyncInfo(serialised_account_info);
-//  sync_update.account_info = account_info_and_file_names.first;
-//  sync_update.shared_file_names = account_info_and_file_names.second;
-  sync_update.handled_requests = Accumulator<passport::PublicMaid::name_type>::Parse(serialised_request);
-  sync_update.requested_file_names = GetRequiredFileNames();
-  sync_updates_.push_back(SyncInfoUpdate());
+  auto account_info_and_file_names = MaidAccount::ParseAccountSyncInfo(serialised_account_info);
+  SyncInfoUpdate sync_update(
+      node_id,
+      account_info_and_file_names.first,
+      Accumulator<passport::PublicMaid::name_type>::Parse(serialised_request),
+      account_info_and_file_names.second,
+      GetRequiredFileNames());
+  sync_updates_.push_back(sync_update);
   return sync_update.requested_file_names;
 }
 
@@ -51,7 +98,6 @@ std::vector<boost::filesystem::path> MaidAccountSync::GetRequiredFileNames() {
 
 void MaidAccountSync::AddDownloadedFile(boost::filesystem::path /*file_name*/,
                                         const NonEmptyString& /*file_contents*/) {
-
 }
 
 bool MaidAccountSync::IsReadyForMerge() {

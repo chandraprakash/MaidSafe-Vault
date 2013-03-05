@@ -35,6 +35,18 @@ class MaidAccountSync {
 
  private:
   struct SyncInfoUpdate {
+    SyncInfoUpdate(
+        const NodeId& node_id_in,
+        const MaidAccount::AccountInfo& account_info_in,
+        const std::vector<Accumulator<passport::PublicMaid::name_type>::HandledRequest>
+            handled_requests_in,
+        const std::vector<boost::filesystem::path> shared_file_names_in,
+        const std::vector<boost::filesystem::path> requested_file_names_in);
+    SyncInfoUpdate(const SyncInfoUpdate& other);
+    SyncInfoUpdate& operator=(const SyncInfoUpdate& other);
+    SyncInfoUpdate(SyncInfoUpdate&& other);
+    SyncInfoUpdate& operator=(SyncInfoUpdate&& other);
+
     NodeId node_id;
     MaidAccount::AccountInfo account_info;
     std::vector<Accumulator<passport::PublicMaid::name_type>::HandledRequest> handled_requests;
