@@ -86,8 +86,6 @@ class MaidAccount {
   serialised_type Serialise() const;
 
   serialised_info_type SerialiseAccountSyncInfo() const;
-  static std::pair<AccountInfo, DiskBasedStorage::FileIdentities> ParseAccountSyncInfo(
-      const serialised_info_type& serialised_info);
 
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);

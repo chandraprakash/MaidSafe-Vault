@@ -179,7 +179,7 @@ std::vector<boost::filesystem::path> VerifyFiles(uint32_t expected_file_num,
                                                  DiskBasedStorage& disk_based_storage) {
   std::future<uint32_t> file_count(disk_based_storage.GetFileCount());
   EXPECT_EQ(expected_file_num, file_count.get());
-  auto result_get_file_paths = disk_based_storage.GetFileNames();
+  auto result_get_file_paths = disk_based_storage.GetFileIdentities();
   return result_get_file_paths.get();
 }
 

@@ -86,7 +86,7 @@ DiskBasedStorage::FileIdentities MaidAccountSync::AddSyncInfoUpdate(
     const MaidAccount::serialised_info_type& serialised_account_info,
     const Accumulator<passport::PublicMaid::name_type>::serialised_requests& serialised_request) {
 
-  auto account_info_and_file_ids = MaidAccount::ParseAccountSyncInfo(serialised_account_info);
+  auto account_info_and_file_ids = ParseMaidAccountSyncInfo(serialised_account_info);
   SyncInfoUpdate sync_update(
       source_id,
       account_info_and_file_ids.first,
