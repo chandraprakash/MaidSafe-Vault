@@ -11,18 +11,6 @@
 
 #include "maidsafe/vault/maid_account_holder/maid_account_sync.h"
 
-#include <string>
-
-#include "boost/variant/apply_visitor.hpp"
-
-#include "maidsafe/common/utils.h"
-
-#include "maidsafe/vault/demultiplexer.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_account.h"
-#include "maidsafe/vault/maid_account_holder/maid_account_pb.h"
-
-
-namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
