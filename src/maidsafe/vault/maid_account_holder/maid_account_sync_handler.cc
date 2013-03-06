@@ -47,11 +47,7 @@ nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(
   DiskBasedStorage::FileIdentities required_files;
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto itr = std::find_if(maid_accounts_sync_.begin(),
-                            maid_accounts_sync_.end(),
-                            [=](const std::unique_ptr<MaidAccountSync>& maid_accounts_sync) {
-                                return (maid_accounts_sync->kMaidName() == maid_name);
-                            });
+    auto itr = detail::FindAccount(maid_accounts_sync_, maid_name);
     if (itr == maid_accounts_sync_.end()) { //  Sync for account not exists
       std::unique_ptr<MaidAccountSync> maid_account_sync(new MaidAccountSync(maid_name));
       required_files = maid_account_sync->AddSyncInfoUpdate(source_id, serialised_account_info,
@@ -66,13 +62,26 @@ nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(
   return nfs::Reply(CommonErrors::success, NonEmptyString());  // FIXME need serialise method for required_files
 }
 
-nfs::Reply MaidAccountSyncHandler::HandleSyncArchiveFiles(const NonEmptyString& archive_files) {
+nfs::Reply MaidAccountSyncHandler::HandleSyncArchiveFiles(const NonEmptyString& archive_files,
+                                                          const NodeId& /*source_id*/) {
   protobuf::SyncArchiveFiles sync_archive_files;
   if (!sync_archive_files.ParseFromString(archive_files.string())) {
     LOG(kError) << "Failed to parse SyncArchiveFiles";
     return nfs::Reply(CommonErrors::parsing_error);
   }
+  MaidName maid_name(Identity((sync_archive_files.maid_name())));
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto itr = detail::FindAccount(maid_accounts_sync_, maid_name);
+    if (itr == maid_accounts_sync_.end())
+      return nfs::Reply(CommonErrors::unknown);  // TODO add error for this type ?
 
+    for (auto &i: sync_archive_files.files()) {
+      (*itr)->AddDownloadedFile(
+        DiskBasedStorage::FileIdentity((std::make_pair(i.file_id().index(), i.file_id().hash()))),
+        NonEmptyString(i.contents()));
+    }
+  }
   return nfs::Reply(CommonErrors::success);
 }
 

@@ -33,7 +33,7 @@ class MaidAccountSyncHandler {
   explicit MaidAccountSyncHandler(const boost::filesystem::path& vault_root_dir);
   nfs::Reply HandleReceivedSyncInfo(const NonEmptyString& serialised_sync_info,
                                     const NodeId& source_id);
-  nfs::Reply HandleSyncArchiveFiles(const NonEmptyString& archive_files);
+  nfs::Reply HandleSyncArchiveFiles(const NonEmptyString& archive_files, const NodeId& source_id);
 
  private:
   MaidAccountSyncHandler(const MaidAccountSyncHandler&);

@@ -102,7 +102,7 @@ DiskBasedStorage::FileIdentities MaidAccountSync::GetRequiredFileNames() {
   return DiskBasedStorage::FileIdentities();
 }
 
-void MaidAccountSync::AddDownloadedFile(boost::filesystem::path /*file_name*/,
+void MaidAccountSync::AddDownloadedFile(DiskBasedStorage::FileIdentity /*file_name*/,
                                         const NonEmptyString& /*file_contents*/) {
 }
 

@@ -21,18 +21,20 @@ namespace vault {
 
 class MaidAccountSync {
  public:
+  typedef MaidName name_type;
   explicit MaidAccountSync(const MaidName& maid_name);
   DiskBasedStorage::FileIdentities AddSyncInfoUpdate(
     const NodeId& source_id,
     const MaidAccount::serialised_info_type& serialised_account_info,
     const Accumulator<MaidName>::serialised_requests& serialised_request);
 
-  void AddDownloadedFile(boost::filesystem::path file_name, const NonEmptyString& file_contents);
+  void AddDownloadedFile(DiskBasedStorage::FileIdentity file_name,
+                         const NonEmptyString& file_contents);
 
-  std::vector<boost::filesystem::path> GetFileRequests(const NodeId& source_id);
+  std::vector<DiskBasedStorage::FileIdentity> GetFileRequests(const NodeId& source_id);
   bool IsReadyForMerge();
   bool MergeSyncResults(std::unique_ptr<MaidAccount>& account, Accumulator<MaidName>& accumulator);
-  MaidName kMaidName() const {return kMaidName_; }
+  MaidName name() const {return kMaidName_; }
 
  private:
   MaidAccountSync(MaidAccountSync&& other);
@@ -58,7 +60,7 @@ class MaidAccountSync {
   DiskBasedStorage::FileIdentities GetRequiredFileNames();
 
   mutable std::mutex mutex_;
-  const MaidName kMaidName_;
+  const name_type kMaidName_;
   std::vector<boost::filesystem::path> downloaded_files_;
   std::vector<SyncInfoUpdate> sync_updates_;
   bool is_ready_for_merge_;
