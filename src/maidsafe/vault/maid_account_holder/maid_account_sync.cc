@@ -75,11 +75,11 @@ std::vector<boost::filesystem::path> MaidAccountSync::AddSyncInfoUpdate(
     const MaidAccount::serialised_info_type& serialised_account_info,
     const Accumulator<passport::PublicMaid::name_type>::serialised_requests& serialised_request) {
 
-  auto account_info_and_file_names = MaidAccount::ParseAccountSyncInfo(serialised_account_info);
+  auto account_info_and_file_names = ParseMaidAccountSyncInfo(serialised_account_info);
   SyncInfoUpdate sync_update(
       source_id,
       account_info_and_file_names.first,
-      Accumulator<passport::PublicMaid::name_type>::Parse(serialised_request),
+      ParseHandledRequest<MaidName>(serialised_request),
       account_info_and_file_names.second,
       GetRequiredFileNames());
   sync_updates_.push_back(sync_update);

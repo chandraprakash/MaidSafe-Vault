@@ -263,7 +263,7 @@ typename Accumulator<Name>::serialised_requests Accumulator<Name>::Serialise(
 }
 
 template<typename Name>
-std::vector<typename Accumulator<Name>::HandledRequest> Accumulator<Name>::Parse(
+std::vector<typename Accumulator<Name>::HandledRequest> ParseHandledRequest(
     const typename Accumulator<Name>::serialised_requests& serialised_requests_in) {
   std::vector<typename Accumulator<Name>::HandledRequest> handled_requests;
   protobuf::HandledRequests proto_handled_requests;
@@ -274,7 +274,7 @@ std::vector<typename Accumulator<Name>::HandledRequest> Accumulator<Name>::Parse
       nfs::Reply reply(nfs::Reply::serialised_type(NonEmptyString(
           proto_handled_requests.handled_requests(index).reply())));
       handled_requests.push_back(
-          HandledRequest(
+          typename Accumulator<Name>::HandledRequest(
               nfs::MessageId(Identity(proto_handled_requests.handled_requests(index).message_id())),
               Name(Identity(proto_handled_requests.name())),
               static_cast<nfs::DataMessage::Action>(

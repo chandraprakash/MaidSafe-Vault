@@ -35,7 +35,7 @@ nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(
     const NonEmptyString& serialised_sync_info, const NodeId& source_id) {
   protobuf::SyncInfo sync_info;
   if (!sync_info.ParseFromString(serialised_sync_info.string())) {
-    LOG(kError) << "Failed to parse reply";
+    LOG(kError) << "Failed to parse SyncInfo";
     return nfs::Reply(CommonErrors::parsing_error);
   }
 
@@ -44,7 +44,7 @@ nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(
   Accumulator<MaidName>::serialised_requests serialised_request(
                                         NonEmptyString(sync_info.accumulator_entries()));
   MaidName maid_name(Identity((sync_info.maid_name())));
-  std::vector<boost::filesystem::path> required_file;
+  std::vector<boost::filesystem::path> required_files;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     auto itr = std::find_if(maid_accounts_sync_.begin(),
@@ -54,17 +54,25 @@ nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(
                             });
     if (itr == maid_accounts_sync_.end()) { //  Sync for account not exists
       std::unique_ptr<MaidAccountSync> maid_account_sync(new MaidAccountSync(maid_name));
-      required_file = maid_account_sync->AddSyncInfoUpdate(source_id, serialised_account_info,
-                                                           serialised_request);
+      required_files = maid_account_sync->AddSyncInfoUpdate(source_id, serialised_account_info,
+                                                            serialised_request);
       maid_accounts_sync_.push_back(std::move(maid_account_sync));
     } else {
-      required_file = (*itr)->AddSyncInfoUpdate(source_id, serialised_account_info, serialised_request);
+      required_files = (*itr)->AddSyncInfoUpdate(source_id, serialised_account_info,
+                                                 serialised_request);
     }
   }
-  return nfs::Reply(CommonErrors::success);
+
+  return nfs::Reply(CommonErrors::success, NonEmptyString());  // FIXME need serialise method for required_files
 }
 
-nfs::Reply MaidAccountSyncHandler::HandleSyncArchiveFiles(const NonEmptyString& /*archive_files*/) {
+nfs::Reply MaidAccountSyncHandler::HandleSyncArchiveFiles(const NonEmptyString& archive_files) {
+  protobuf::SyncArchiveFiles sync_archive_files;
+  if (!sync_archive_files.ParseFromString(archive_files.string())) {
+    LOG(kError) << "Failed to parse SyncArchiveFiles";
+    return nfs::Reply(CommonErrors::parsing_error);
+  }
+
   return nfs::Reply(CommonErrors::success);
 }
 

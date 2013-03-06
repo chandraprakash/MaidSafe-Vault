@@ -120,6 +120,8 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
                                reply_functor);
         break;
       case Sync::Action::kSyncArchiveFiles:
+        HandleSyncArchiveFiles(NonEmptyString(sync_message.sync_message()), source_id,
+                               reply_functor);
         break;
       default:
         LOG(kError) << "Unhandled kSynchronise action type";
@@ -304,10 +306,15 @@ void MaidAccountHolderService::HandleReceivedSyncInfo(
     const NonEmptyString &/*serialised_sync_info*/,
     const NodeId& /*source_id*/,
     const routing::ReplyFunctor &/*reply_functor*/) {
-//  MaidAccount maid_account(serialised_sync_info);
-//  return WriteFile(kRootDir_ / maid_account.maid_name().data.string(),
-//                   serialised_account.string());
+// TODO (Prakash) call sync handler here
   return;
+}
+
+void MaidAccountHolderService::HandleSyncArchiveFiles(
+    const NonEmptyString& /*serialised_archive_files*/,
+    const NodeId& /*source_id*/,
+    const routing::ReplyFunctor& /*reply_functor*/) {
+// TODO (Prakash) call sync handler here
 }
 
 }  // namespace vault

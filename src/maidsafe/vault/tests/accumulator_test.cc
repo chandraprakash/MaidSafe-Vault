@@ -67,7 +67,7 @@ TEST(AccumulatorTest, BEH_PushSingleResult) {
   Accumulator<passport::PublicMaid::name_type>::serialised_requests serialised(
       accumulator.Serialise(passport::PublicMaid::name_type(
       Identity((data_message.source().node_id).string()))));
-  auto parsed(accumulator.Parse(serialised));
+  auto parsed(ParseHandledRequest<MaidName>(serialised));
   EXPECT_EQ(parsed.size(), 1);
 }
 
@@ -87,7 +87,7 @@ TEST(AccumulatorTest, BEH_PushSingleResultThreaded) {
   Accumulator<passport::PublicMaid::name_type>::serialised_requests serialised(
       accumulator.Serialise(passport::PublicMaid::name_type(
       Identity((data_message.source().node_id).string()))));
-  auto parsed(accumulator.Parse(serialised));
+  auto parsed(ParseHandledRequest<MaidName>(serialised));
   EXPECT_EQ(parsed.size(), 1);
     });
 }

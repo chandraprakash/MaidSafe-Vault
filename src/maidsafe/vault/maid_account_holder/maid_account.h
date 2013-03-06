@@ -86,8 +86,6 @@ class MaidAccount {
   serialised_type Serialise() const;
 
   serialised_info_type SerialiseAccountSyncInfo() const;
-  static std::pair<AccountInfo, std::vector<boost::filesystem::path>> ParseAccountSyncInfo(
-      const serialised_info_type& serialised_info);
 
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
@@ -131,6 +129,9 @@ class MaidAccount {
   int64_t total_claimed_available_size_by_pmids_, total_put_data_;
   DiskBasedStorage archive_;
 };
+
+std::pair<MaidAccount::AccountInfo, std::vector<boost::filesystem::path>> ParseMaidAccountSyncInfo(
+    const MaidAccount::serialised_info_type& serialised_info);
 
 }  // namespace vault
 
