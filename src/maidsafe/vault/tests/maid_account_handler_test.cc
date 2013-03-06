@@ -499,10 +499,7 @@ TYPED_TEST_P(MaidAccountHandlerTypedTest, BEH_Adjust) {
 }
 */
 
-//  REGISTER_TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest,
-//                           BEH_PutData,
-//                           BEH_DeleteData,
-//                           BEH_Adjust);
+//  REGISTER_TYPED_TEST_CASE_P(MaidAccountHandlerTypedTest, BEH_PutData, BEH_DeleteData, BEH_Adjust);
 
 //  typedef testing::Types<passport::PublicAnmid,
 //                       passport::PublicAnsmid,
