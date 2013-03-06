@@ -221,22 +221,18 @@ std::future<uint32_t> DiskBasedStorage::GetFileCount() const {
   return promise->get_future();
 }
 
-std::future<std::vector<fs::path>> DiskBasedStorage::GetFileNames() const {
-  auto promise(std::make_shared<std::promise<std::vector<fs::path>>>());
+std::future<DiskBasedStorage::FileIdentities> DiskBasedStorage::GetFileIdentities() const {
+  auto promise(std::make_shared<std::promise<FileIdentities>>());
   active_.Send([promise, this] {
-                   std::vector<fs::path> file_names;
-                   file_names.reserve(file_ids_.size());
-                   for (auto& file_id : file_ids_)
-                     file_names.push_back(GetFileName(file_id));
-                   promise->set_value(file_names);
+                   promise->set_value(file_ids_);
                });
   return promise->get_future();
 }
 
-std::future<NonEmptyString> DiskBasedStorage::GetFile(const fs::path& filename) const {
+std::future<NonEmptyString> DiskBasedStorage::GetFile(const FileIdentity& file_id) const {
   auto promise(std::make_shared<std::promise<NonEmptyString>>());
-  active_.Send([filename, promise, this] {
-                   NonEmptyString content(ReadFile(kRoot_ / filename));
+  active_.Send([file_id, promise, this] {
+                   NonEmptyString content(ReadFile(kRoot_ / GetFileName(file_id)));
                    if (content.IsInitialised()) {
                      promise->set_value(content);
                    } else {
@@ -247,16 +243,15 @@ std::future<NonEmptyString> DiskBasedStorage::GetFile(const fs::path& filename) 
   return promise->get_future();
 }
 
-void DiskBasedStorage::PutFile(const fs::path& filename, const NonEmptyString& content) {
+void DiskBasedStorage::PutFile(const FileIdentity& file_id, const NonEmptyString& content) {
+  auto file_name(GetFileName(file_id));
   try {
-    std::string extension(filename.extension().string().substr(1));
-    crypto::SHA512Hash hash(DecodeFromBase32(extension));
-    int index(std::stoi(filename.stem().string()));
-    FileIdentity file_id(std::make_pair(index, hash));
-    active_.Send([filename, content, file_id, this] { DoPutFile(filename, content, file_id); });
+    active_.Send([file_name, content, file_id, this] {
+                     DoPutFile(file_name, content, file_id);
+                 });
   }
   catch(const std::exception& e) {
-    LOG(kError) << "Received invalid file " << filename << ":  " << e.what();
+    LOG(kError) << "Received invalid file " << file_name << ":  " << e.what();
   }
 }
 

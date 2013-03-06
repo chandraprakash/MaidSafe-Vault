@@ -45,11 +45,11 @@ class PmidAccountHandler {
   std::vector<PmidName> GetAccountNames() const;
   std::vector<PmidName> GetArchivedAccountNames() const;
   PmidAccount::serialised_type GetSerialisedAccount(const PmidName& account_name) const;
-  std::vector<boost::filesystem::path> GetArchiveFileNames(const PmidName& account_name) const;
+  DiskBasedStorage::FileIdentities GetArchiveFileNames(const PmidName& account_name) const;
   NonEmptyString GetArchiveFile(const PmidName& account_name,
-                                const boost::filesystem::path& path) const;
+                                const DiskBasedStorage::FileIdentity& file_id) const;
   void PutArchiveFile(const PmidName& account_name,
-                      const boost::filesystem::path& path,
+                      const DiskBasedStorage::FileIdentity& file_id,
                       const NonEmptyString& content);
 
   void PruneArchivedAccounts(std::function<bool(const PmidName& account_name)> criteria);

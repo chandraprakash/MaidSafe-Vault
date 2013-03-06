@@ -11,6 +11,8 @@
 
 #include "maidsafe/vault/pmid_account_holder/pmid_record.h"
 
+#include <string>
+
 #include "maidsafe/common/log.h"
 
 #include "maidsafe/vault/pmid_account_holder/pmid_account_pb.h"

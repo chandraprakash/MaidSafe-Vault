@@ -52,7 +52,7 @@ class SelectedOperationsContainer {
 
 class Commander {
  public:
-  Commander(size_t pmids_count);
+  explicit Commander(size_t pmids_count);
   void AnalyseCommandLineOptions(int argc, char* argv[]);
 
  private:

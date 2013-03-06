@@ -159,9 +159,12 @@ MaidAccount::serialised_type MaidAccount::Serialise() const {
       total_claimed_available_size_by_pmids_);
   proto_maid_account.set_total_put_data(total_put_data_);
 
-  auto archive_file_names(GetArchiveFileNames());
-  for (auto& archive_file_name : archive_file_names)
-    proto_maid_account.add_archive_file_names(archive_file_name.string());
+  auto archive_file_ids(GetArchiveFileIdenitities());
+  for (auto& archive_file_id : archive_file_ids) {
+    auto proto_archive_file_id(proto_maid_account.add_file_ids());
+    proto_archive_file_id->set_index(archive_file_id.first);
+    proto_archive_file_id->set_hash(archive_file_id.second.string());
+  }
 
   return serialised_type(NonEmptyString(proto_maid_account.SerializeAsString()));
 }
@@ -189,14 +192,17 @@ MaidAccount::serialised_info_type  MaidAccount::SerialiseAccountSyncInfo() const
       total_claimed_available_size_by_pmids_);
   proto_maid_account.set_total_put_data(total_put_data_);
 
-  auto archive_file_names(GetArchiveFileNames());
-  for (auto& archive_file_name : archive_file_names)
-    proto_maid_account.add_archive_file_names(archive_file_name.string());
+  auto archive_file_ids(GetArchiveFileIdenitities());
+  for (auto& archive_file_id : archive_file_ids) {
+    auto proto_archive_file_id(proto_maid_account.add_file_ids());
+    proto_archive_file_id->set_index(archive_file_id.first);
+    proto_archive_file_id->set_hash(archive_file_id.second.string());
+  }
 
   return serialised_info_type(NonEmptyString(proto_maid_account.SerializeAsString()));
 }
 
-std::pair<MaidAccount::AccountInfo, std::vector<boost::filesystem::path>>
+std::pair<MaidAccount::AccountInfo, DiskBasedStorage::FileIdentities>
     MaidAccount::ParseAccountSyncInfo(const serialised_info_type& serialised_info) {
   protobuf::MaidAccount proto_maid_account;
   MaidAccount::AccountInfo account_info;
@@ -219,9 +225,12 @@ std::pair<MaidAccount::AccountInfo, std::vector<boost::filesystem::path>>
   account_info.total_claimed_available_size_by_pmids =
       proto_maid_account.total_claimed_available_size_by_pmids();
   account_info.total_put_data = proto_maid_account.total_put_data();
-  for (auto index(0); index < proto_maid_account.archive_file_names_size(); ++index) {
+  DiskBasedStorage::FileIdentities file_identities;
+  for (auto index(0); index < proto_maid_account.file_ids_size(); ++index) {
+    file_identities[proto_maid_account.file_ids(index).index()] =
+        Identity(proto_maid_account.file_ids(index).hash());
   }
-  return std::make_pair(account_info, std::vector<boost::filesystem::path>());
+  return std::make_pair(account_info, file_identities);
 }
 
 std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {
@@ -256,18 +265,19 @@ void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
   *itr = pmid_totals;
 }
 
-std::vector<fs::path> MaidAccount::GetArchiveFileNames() const {
-  auto future(archive_.GetFileNames());
+DiskBasedStorage::FileIdentities MaidAccount::GetArchiveFileIdenitities() const {
+  auto future(archive_.GetFileIdentities());
   return future.get();
 }
 
-NonEmptyString MaidAccount::GetArchiveFile(const fs::path& filename) const {
-  auto future(archive_.GetFile(filename));
+NonEmptyString MaidAccount::GetArchiveFile(const DiskBasedStorage::FileIdentity& file_id) const {
+  auto future(archive_.GetFile(file_id));
   return future.get();
 }
 
-void MaidAccount::PutArchiveFile(const fs::path& filename, const NonEmptyString& content) {
-  archive_.PutFile(filename, content);
+void MaidAccount::PutArchiveFile(const DiskBasedStorage::FileIdentity& file_id,
+                                 const NonEmptyString& content) {
+  archive_.PutFile(file_id, content);
 }
 
 }  // namespace vault

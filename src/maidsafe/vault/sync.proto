@@ -1,4 +1,5 @@
 package maidsafe.vault.protobuf;
+import "maidsafe/vault/maid_account_holder/maid_account.proto";
 option optimize_for = LITE_RUNTIME;
 
 message Sync {
@@ -7,12 +8,12 @@ message Sync {
 }
 
 message ArchiveFile {
-  required bytes name = 1;
+  required FileId file_id = 1;
   required bytes contents = 2;
 }
 
 message GetArchiveFiles {
-  repeated bytes file_hash_requested = 1;
+  repeated FileId file_hash_requested = 1;
 }
 
 message SyncInfo {

@@ -175,17 +175,17 @@ PmidAccount::serialised_type PmidAccount::Serialise() const {
   return serialised_type(NonEmptyString(pmid_account.SerializeAsString()));
 }
 
-std::vector<boost::filesystem::path> PmidAccount::GetArchiveFileNames() const {
-  return archive_.GetFileNames().get();
+DiskBasedStorage::FileIdentities PmidAccount::GetArchiveFileNames() const {
+  return archive_.GetFileIdentities().get();
 }
 
-NonEmptyString PmidAccount::GetArchiveFile(const boost::filesystem::path& path) const {
-  return archive_.GetFile(path).get();
+NonEmptyString PmidAccount::GetArchiveFile(const DiskBasedStorage::FileIdentity& file_id) const {
+  return archive_.GetFile(file_id).get();
 }
 
-void PmidAccount::PutArchiveFile(const boost::filesystem::path& path,
+void PmidAccount::PutArchiveFile(const DiskBasedStorage::FileIdentity& file_id,
                                  const NonEmptyString& content) {
-  archive_.PutFile(path, content);
+  archive_.PutFile(file_id, content);
 }
 
 void PmidAccount::ArchiveRecentData() {

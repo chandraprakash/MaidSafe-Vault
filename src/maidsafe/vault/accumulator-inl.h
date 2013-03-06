@@ -17,7 +17,6 @@
 #include <string>
 #include <vector>
 #include <deque>
-#include <string>
 
 #include "maidsafe/nfs/reply.h"
 #include "maidsafe/data_types/data_name_variant.h"

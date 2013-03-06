@@ -252,11 +252,14 @@ void MaidAccountHolderService::HandleFileRequest(const NodeId& requester_node_id
                                                  const protobuf::GetArchiveFiles& requested_files,
                                                  std::shared_ptr<SharedResponse> shared_response) {
   assert(requested_files.IsInitialized());
-  for (auto& file_name : requested_files.file_hash_requested()) {
+  for (auto& file_id : requested_files.file_hash_requested()) {
     try {
-      auto file_contents = maid_account_handler_.GetArchiveFile(account_name, fs::path(file_name));
+      auto file_contents = maid_account_handler_.GetArchiveFile(account_name,
+          DiskBasedStorage::FileIdentity(std::make_pair(file_id.index(), file_id.hash())));
       protobuf::ArchiveFile maid_account_file;
-      maid_account_file.set_name(file_name);
+      auto proto_file_id(maid_account_file.mutable_file_id());
+      proto_file_id->set_index(file_id.index());
+      proto_file_id->set_hash(file_id.hash());
       maid_account_file.set_contents(file_contents.string());
       assert(maid_account_file.IsInitialized() && "Uninitialised maid_account_file");
       protobuf::Sync sync_message;

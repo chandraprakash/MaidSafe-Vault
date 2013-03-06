@@ -54,7 +54,7 @@ std::vector<VoidFuture> StoreDataNames(int name_count,
     data_names.push_back(id);
     int32_t value(std::abs(RandomInt32()));
     values.push_back(value);
-    switch(n % 15) {
+    switch (n % 15) {
       case 0: futures.push_back(disk_based_storage.Store<passport::PublicAnmid>(
                                     passport::PublicAnmid::name_type(id), value));
               break;
@@ -110,7 +110,7 @@ std::vector<Int32Future> DeleteDataNames(const std::vector<Identity>& data_names
   std::vector<Int32Future> futures;
   for (size_t n(0); n < data_names.size(); ++n) {
     Identity id(data_names.at(n));
-    switch(n % 15) {
+    switch (n % 15) {
       case 0: futures.push_back(disk_based_storage.Delete<passport::PublicAnmid>(
                                     passport::PublicAnmid::name_type(id)));
               break;
@@ -346,7 +346,7 @@ class DiskStorageTest : public testing::Test {
 
   void DeleteRandomElement() {
     auto it(element_names_.begin());
-    std::advance(it, std::rand() % element_names_.size());
+    std::advance(it, std::rand_r() % element_names_.size());
     typename T::name_type name((Identity(*it)));
     auto future(disk_based_storage_.Delete<T>(name));
     future.get();
@@ -355,13 +355,13 @@ class DiskStorageTest : public testing::Test {
   void GetRandomFile() {
     auto names(disk_based_storage_.GetFileNames().get());
     auto it(names.begin());
-    std::advance(it, std::rand() % names.size());
+    std::advance(it, std::rand_r() % names.size());
     auto future(disk_based_storage_.GetFile(*it));
     future.get();
   }
 
   void RunOperation(Operations op) {
-    switch(op) {
+    switch (op) {
       case kStore: return StoreAnElement().get();
       case kDelete: return DeleteRandomElement();
       case kGetFile: return GetRandomFile();
@@ -383,7 +383,7 @@ class DiskStorageTest : public testing::Test {
     while (rounds-- > 0) {
       auto names(disk_based_storage_.GetFileNames().get());
       auto it(names.begin());
-      std::advance(it, std::rand() % names.size());
+      std::advance(it, std::rand_r() % names.size());
       fs::path file_path(*root_directory_ / *it);
       switch (rounds % 3) {
         case 0: fs::remove(file_path, ec);
@@ -457,31 +457,33 @@ TYPED_TEST_P(DiskStorageTest, BEH_ActionsWithCorruption) {
   corrupt_future.get();
 }
 
-//TYPED_TEST(DiskStorageTest, BEH_FileMerging) {
-//  // Testing with max = 10, min = 5
-//  detail::Parameters::set_file_element_count_limits(10, 5);
-//  std::shared_ptr<DiskBasedStorage> disk_based_storage;
-//  ElementMap element_list;
+/*
+TYPED_TEST(DiskStorageTest, BEH_FileMerging) {
+  // Testing with max = 10, min = 5
+  detail::Parameters::set_file_element_count_limits(10, 5);
+  std::shared_ptr<DiskBasedStorage> disk_based_storage;
+  ElementMap element_list;
 
-//  // This bit can probably be made a function to reset the containers and do another case
-//  while (element_list.size() != 50U) {
-//    disk_based_storage = std::make_shared<DiskBasedStorage>(*this->root_directory_);
-//    element_list.clear();
-//    for (uint32_t i(0); i < 50U; ++i)
-//      StoreAnElement<TypeParam>(100U, *disk_based_storage, element_list);
-//  }
+  // This bit can probably be made a function to reset the containers and do another case
+  while (element_list.size() != 50U) {
+    disk_based_storage = std::make_shared<DiskBasedStorage>(*this->root_directory_);
+    element_list.clear();
+    for (uint32_t i(0); i < 50U; ++i)
+      StoreAnElement<TypeParam>(100U, *disk_based_storage, element_list);
+  }
 
-//  // Do a trivial case, where only one file goes down to 4
+  // Do a trivial case, where only one file goes down to 4
 
-//  // Delete elements so that we have (file index - element count) that tests an interesting scenario
-//  // For example: 0 - 8, 1 - 7, 2 - 5, 3 - 9, 4 - 10. Then, delete an element from index 2.
-//  // The resulting file scheme should be: 0 - 10,  1 - 10,  2 - 10, 3 - 8
+  // Delete elements so that we have (file index - element count) that tests an interesting scenario
+  // For example: 0 - 8, 1 - 7, 2 - 5, 3 - 9, 4 - 10. Then, delete an element from index 2.
+  // The resulting file scheme should be: 0 - 10,  1 - 10,  2 - 10, 3 - 8
 
 
-//  // Another interesting scenario: 0 - 8, 1 - 7, 2 - 5, 3 - 5, 4 - 5.
-//  // Then, delete an element from index 2.
-//  // The resulting file scheme should be: 0 - 10,  1 - 10,  2 - 9
-//}
+  // Another interesting scenario: 0 - 8, 1 - 7, 2 - 5, 3 - 5, 4 - 5.
+  // Then, delete an element from index 2.
+  // The resulting file scheme should be: 0 - 10,  1 - 10,  2 - 9
+}
+*/
 
 REGISTER_TYPED_TEST_CASE_P(DiskStorageTest,
                            BEH_SmallStoreAndDelete,

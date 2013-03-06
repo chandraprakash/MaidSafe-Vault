@@ -80,9 +80,9 @@ class PmidAccount {
 
   // Used in synchronisation with other Pmid Account Holders - serialises all in-memory data
   serialised_type Serialise() const;
-  std::vector<boost::filesystem::path> GetArchiveFileNames() const;
-  NonEmptyString GetArchiveFile(const boost::filesystem::path& path) const;
-  void PutArchiveFile(const boost::filesystem::path& path, const NonEmptyString& content);
+  DiskBasedStorage::FileIdentities GetArchiveFileNames() const;
+  NonEmptyString GetArchiveFile(const DiskBasedStorage::FileIdentity& file_id) const;
+  void PutArchiveFile(const DiskBasedStorage::FileIdentity& file_id, const NonEmptyString& content);
 
   // Throw if the data is a duplicate
   template<typename Data>

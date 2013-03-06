@@ -7,6 +7,11 @@ message PmidTotals {
   required PmidRecord pmid_record = 2;
 }
 
+message FileId {
+  required int32 index = 1;
+  required bytes hash = 2;
+}
+
 // Data put to the network by the client
 message PutData {
   required int32 type = 1;
@@ -20,7 +25,7 @@ message MaidAccount {
   repeated PutData recent_put_data = 3;
   required int64 total_claimed_available_size_by_pmids = 4;
   required int64 total_put_data = 5;
-  repeated bytes archive_file_names = 6;
+  repeated FileId file_ids = 6;
 }
 
 // Used as data field in MM's Reply to Put request.

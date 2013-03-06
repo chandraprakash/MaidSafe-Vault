@@ -23,7 +23,7 @@ class MaidAccountSync {
  public:
   MaidAccountSync(const MaidName& maid_name);
 
-  std::vector<boost::filesystem::path> AddSyncInfoUpdate(
+  DiskBasedStorage::FileIdentities AddSyncInfoUpdate(
     const NodeId& source_id,
     const MaidAccount::serialised_info_type& serialised_account_info,
     const Accumulator<MaidName>::serialised_requests& serialised_request);
@@ -44,8 +44,8 @@ class MaidAccountSync {
         const MaidAccount::AccountInfo& account_info_in,
         const std::vector<Accumulator<passport::PublicMaid::name_type>::HandledRequest>
             handled_requests_in,
-        const std::vector<boost::filesystem::path> shared_file_names_in,
-        const std::vector<boost::filesystem::path> requested_file_names_in);
+        const DiskBasedStorage::FileIdentities shared_file_ids_in,
+        const DiskBasedStorage::FileIdentities requested_file_ids_in);
     SyncInfoUpdate(const SyncInfoUpdate& other);
     SyncInfoUpdate& operator=(const SyncInfoUpdate& other);
     SyncInfoUpdate(SyncInfoUpdate&& other);
@@ -54,9 +54,9 @@ class MaidAccountSync {
     NodeId source_id;
     MaidAccount::AccountInfo account_info;
     std::vector<Accumulator<MaidName>::HandledRequest> handled_requests;
-    std::vector<boost::filesystem::path> shared_file_names, requested_file_names;
+    DiskBasedStorage::FileIdentities shared_file_ids, requested_file_ids;
   };
-  std::vector<boost::filesystem::path> GetRequiredFileNames();
+  DiskBasedStorage::FileIdentities GetRequiredFileNames();
 
   mutable std::mutex mutex_;
   const MaidName kMaidName_;

@@ -82,11 +82,11 @@ class PmidAccountHolderService {
 
   bool StatusHasReverted(const PmidName& pmid_name, bool node_up) const;
   void RevertMessages(const PmidName& pmid_name,
-                      const std::vector<boost::filesystem::path>::reverse_iterator& begin,
-                      std::vector<boost::filesystem::path>::reverse_iterator& current,
+                      const DiskBasedStorage::FileIdentities::reverse_iterator& begin,
+                      DiskBasedStorage::FileIdentities::reverse_iterator& current,
                       bool node_up);
   std::set<PmidName> GetDataNamesInFile(const PmidName& pmid_name,
-                                        const boost::filesystem::path& path) const;
+                                        const DiskBasedStorage::FileIdentity& file_id) const;
   void SendMessages(const PmidName& pmid_name,
                     const std::set<PmidName>& metadata_manager_ids,
                     bool node_up);

@@ -72,7 +72,6 @@ void CheckAllFutures(const PmidVector& all_pmids,
       std::cout << "Failed getting key #" << i << std::endl;
     }
   }
-
 }
 
 }  // namespace

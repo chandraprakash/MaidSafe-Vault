@@ -44,7 +44,7 @@ nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(
   Accumulator<MaidName>::serialised_requests serialised_request(
                                         NonEmptyString(sync_info.accumulator_entries()));
   MaidName maid_name(Identity((sync_info.maid_name())));
-  std::vector<boost::filesystem::path> required_file;
+  DiskBasedStorage::FileIdentities required_file;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     auto itr = std::find_if(maid_accounts_sync_.begin(),

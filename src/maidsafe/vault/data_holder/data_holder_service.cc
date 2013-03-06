@@ -66,7 +66,9 @@ DataHolderService::DataHolderService(const passport::Pmid& pmid,
       disk_total_(space_info_.available),
       permanent_size_(disk_total_ * 4 / 5),
       cache_size_(disk_total_ / 10),
-      permanent_data_store_(vault_root_dir / "data_holder" / "permanent", DiskUsage(10000)/*perm_usage*/),  // TODO(Fraser) BEFORE_RELEASE need to read value from disk
+      //  TODO(Fraser) BEFORE_RELEASE need to read value from disk
+      permanent_data_store_(
+          vault_root_dir / "data_holder" / "permanent", DiskUsage(10000)/*perm_usage*/),
       cache_data_store_(cache_usage, DiskUsage(cache_size_ / 2), nullptr,
                         vault_root_dir / "data_holder" / "cache"),  // FIXME - DiskUsage  NOLINT
       mem_only_cache_(mem_only_cache_usage, DiskUsage(cache_size_ / 2), nullptr,

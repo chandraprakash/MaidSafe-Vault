@@ -101,7 +101,7 @@ PmidAccount::serialised_type PmidAccountHandler::GetSerialisedAccount(
   return detail::GetSerialisedAccount(mutex_, pmid_accounts_, account_name);
 }
 
-std::vector<boost::filesystem::path> PmidAccountHandler::GetArchiveFileNames(
+DiskBasedStorage::FileIdentities PmidAccountHandler::GetArchiveFileNames(
     const PmidName& account_name) const {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(pmid_accounts_, account_name));
@@ -110,23 +110,24 @@ std::vector<boost::filesystem::path> PmidAccountHandler::GetArchiveFileNames(
   return (*itr)->GetArchiveFileNames();
 }
 
-NonEmptyString PmidAccountHandler::GetArchiveFile(const PmidName& account_name,
-                                                  const boost::filesystem::path& path) const {
+NonEmptyString PmidAccountHandler::GetArchiveFile(
+    const PmidName& account_name,
+    const DiskBasedStorage::FileIdentity& file_id) const {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  return (*itr)->GetArchiveFile(path);
+  return (*itr)->GetArchiveFile(file_id);
 }
 
 void PmidAccountHandler::PutArchiveFile(const PmidName& account_name,
-                                        const boost::filesystem::path& path,
+                                        const DiskBasedStorage::FileIdentity& file_id,
                                         const NonEmptyString& content) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(pmid_accounts_, account_name));
   if (itr == pmid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  (*itr)->PutArchiveFile(path, content);
+  (*itr)->PutArchiveFile(file_id, content);
 }
 
 void PmidAccountHandler::PruneArchivedAccounts(

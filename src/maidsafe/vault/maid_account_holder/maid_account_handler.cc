@@ -83,26 +83,27 @@ MaidAccount::serialised_info_type MaidAccountHandler::GetSerialisedAccountSyncIn
   return detail::GetSerialisedAccountSyncInfo(mutex_, maid_accounts_, account_name);
 }
 
-std::vector<boost::filesystem::path> MaidAccountHandler::GetArchiveFileNames(
+DiskBasedStorage::FileIdentities MaidAccountHandler::GetArchiveFileNames(
     const MaidName& account_name) const {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  return (*itr)->GetArchiveFileNames();
+  return (*itr)->GetArchiveFileIdenitities();
 }
 
-NonEmptyString MaidAccountHandler::GetArchiveFile(const MaidName& account_name,
-                                                  const boost::filesystem::path& filename) const {
+NonEmptyString MaidAccountHandler::GetArchiveFile(
+    const MaidName& account_name,
+    const DiskBasedStorage::FileIdentity& file_id) const {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())
     ThrowError(VaultErrors::no_such_account);
-  return (*itr)->GetArchiveFile(filename);
+  return (*itr)->GetArchiveFile(file_id);
 }
 
 void MaidAccountHandler::PutArchiveFile(const MaidName& account_name,
-                                        const boost::filesystem::path& filename,
+                                        const DiskBasedStorage::FileIdentity &filename,
                                         const NonEmptyString& content) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(maid_accounts_, account_name));

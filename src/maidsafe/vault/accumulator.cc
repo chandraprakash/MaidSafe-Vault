@@ -11,6 +11,7 @@
 
 #include "maidsafe/vault/accumulator.h"
 
+#include <string>
 
 
 namespace maidsafe {
@@ -51,13 +52,14 @@ std::vector<typename Accumulator<DataNameVariant>::PendingRequest>
   }
 
   handled_requests_.push_back(
-      Accumulator::HandledRequest(data_message.message_id(),
-                                  GetDataNameVariant(data_message.data().type, data_message.data().name),
-                                  data_message.data().action,
-                                  data_message.data().name,
-                                  data_message.data().type,
-                                  static_cast<int32_t>(data_message.data().content.string().size()),
-                                  return_code));
+      Accumulator::HandledRequest(
+          data_message.message_id(),
+          GetDataNameVariant(data_message.data().type, data_message.data().name),
+          data_message.data().action,
+          data_message.data().name,
+          data_message.data().type,
+          static_cast<int32_t>(data_message.data().content.string().size()),
+          return_code));
   if (handled_requests_.size() > kMaxHandledRequestsCount_)
     handled_requests_.pop_front();
   return ret_requests;

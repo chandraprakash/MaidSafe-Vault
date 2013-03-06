@@ -43,6 +43,9 @@ class DiskStorageTest;
 
 class DiskBasedStorage {
  public:
+  typedef std::map<int, crypto::SHA512Hash> FileIdentities;
+  typedef FileIdentities::value_type FileIdentity;
+
   explicit DiskBasedStorage(const boost::filesystem::path& root);
 
   // Element handling
@@ -54,10 +57,9 @@ class DiskBasedStorage {
 
   // Synchronisation helpers
   std::future<uint32_t> GetFileCount() const;
-  // File names are: index number + "." + base 32 encoded hash of contents
-  std::future<std::vector<boost::filesystem::path>> GetFileNames() const;
-  std::future<NonEmptyString> GetFile(const boost::filesystem::path& filename) const;
-  void PutFile(const boost::filesystem::path& filename, const NonEmptyString& content);
+  std::future<FileIdentities> GetFileIdentities() const;
+  std::future<NonEmptyString> GetFile(const FileIdentity& file_id) const;
+  void PutFile(const FileIdentity& file_id, const NonEmptyString& content);
 
   template<typename T>
   friend class test::DiskStorageTest;
@@ -67,9 +69,6 @@ class DiskBasedStorage {
   DiskBasedStorage& operator=(const DiskBasedStorage&);
   DiskBasedStorage(DiskBasedStorage&&);
   DiskBasedStorage& operator=(DiskBasedStorage&&);
-
-  typedef std::map<int, crypto::SHA512Hash> FileIdentities;
-  typedef FileIdentities::value_type FileIdentity;
 
   FileIdentity GetAndVerifyFileNameParts(boost::filesystem::directory_iterator itr) const;
 

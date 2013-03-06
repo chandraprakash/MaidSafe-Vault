@@ -11,6 +11,8 @@
 
 #include "maidsafe/vault/pmid_account_holder/pmid_account_holder_service.h"
 
+#include <string>
+
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/pmid_account_holder/pmid_account_pb.h"
@@ -125,15 +127,14 @@ void PmidAccountHolderService::InformAboutDataHolder(const PmidName& pmid_name, 
   }
 }
 
-std::set<PmidName> PmidAccountHolderService::GetDataNamesInFile(
-    const PmidName& pmid_name,
-    const boost::filesystem::path& path) const {
+std::set<PmidName> PmidAccountHolderService::GetDataNamesInFile(const PmidName& pmid_name,
+    const DiskBasedStorage::FileIdentity& file_id) const {
   // pare file serialse as string sed to has pmidah to send to mm
-  NonEmptyString file_content(pmid_account_handler_.GetArchiveFile(pmid_name, path));
+  NonEmptyString file_content(pmid_account_handler_.GetArchiveFile(pmid_name, file_id));
   protobuf::PmidRecord pmid_data;
   pmid_data.ParseFromString(file_content.string());
   std::set<PmidName> metadata_manager_ids;
-  //for (int n(0); n != pmid_data.stored_total_size(); ++n)
+  //  for (int n(0); n != pmid_data.stored_total_size(); ++n)
   //  metadata_manager_ids.insert(PmidName(Identity(pmid_data.data_stored(n).name())));
   return metadata_manager_ids;
 }
@@ -148,10 +149,11 @@ bool PmidAccountHolderService::StatusHasReverted(const PmidName& pmid_name, bool
     return false;
 }
 
-void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
-                                              const std::vector<fs::path>::reverse_iterator& begin,
-                                              std::vector<fs::path>::reverse_iterator& current,
-                                              bool node_up) {
+void PmidAccountHolderService::RevertMessages(
+    const PmidName& pmid_name,
+    const DiskBasedStorage::FileIdentities::reverse_iterator& begin,
+    DiskBasedStorage::FileIdentities::reverse_iterator& current,
+    bool node_up) {
   while (current != begin) {
     std::set<PmidName> metadata_manager_ids(GetDataNamesInFile(pmid_name, *current));
     SendMessages(pmid_name, metadata_manager_ids, node_up);
@@ -166,7 +168,7 @@ void PmidAccountHolderService::SendMessages(const PmidName& /*pmid_name*/,
                                             const std::set<PmidName>& /*metadata_manager_ids*/,
                                             bool /*node_up*/) {
 //  for (const PmidName& metadata_manager_id : metadata_manager_ids) {
-    //  TODO(dirvine) implement
+    // TODO(dirvine) implement
         //    nfs_.DataHolderStatusChanged(NodeId(metadata_manager_id), NodeId(pmid_name), node_up);
 //  }
 }

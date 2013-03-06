@@ -52,11 +52,11 @@ class MaidAccountHandler {
   MaidAccount::serialised_type GetSerialisedAccount(const MaidName& account_name) const;
   MaidAccount::serialised_info_type GetSerialisedAccountSyncInfo(
       const MaidName& account_name) const;
-  std::vector<boost::filesystem::path> GetArchiveFileNames(const MaidName& account_name) const;
+  DiskBasedStorage::FileIdentities GetArchiveFileNames(const MaidName& account_name) const;
   NonEmptyString GetArchiveFile(const MaidName& account_name,
-                                const boost::filesystem::path& filename) const;
+                                const DiskBasedStorage::FileIdentity& file_id) const;
   void PutArchiveFile(const MaidName& account_name,
-                      const boost::filesystem::path& filename,
+                      const DiskBasedStorage::FileIdentity& filename,
                       const NonEmptyString& content);
 
   typedef std::true_type RequireAccount;

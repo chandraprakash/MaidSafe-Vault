@@ -15,6 +15,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <vector>
+#include <string>
 
 #include "boost/asio/ip/udp.hpp"
 #include "boost/filesystem/path.hpp"
@@ -74,7 +75,7 @@ class NetworkGenerator {
 
 class ClientTester {
  public:
-  ClientTester(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  explicit ClientTester(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
 
  protected:
   // TODO(Dan): Remove the typedefs
@@ -96,7 +97,7 @@ class ClientTester {
 
 class KeyStorer : public ClientTester {
  public:
-  KeyStorer(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  explicit KeyStorer(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
   void Store(const PmidVector& all_pmids);
 
  private:
@@ -105,13 +106,13 @@ class KeyStorer : public ClientTester {
 
 class KeyVerifier : public ClientTester {
  public:
-  KeyVerifier(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  explicit KeyVerifier(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
   void Verify(const PmidVector& all_pmids);
 };
 
 class DataChunkStorer : public ClientTester {
  public:
-  DataChunkStorer(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
+  explicit DataChunkStorer(const std::vector<boost::asio::ip::udp::endpoint>& peer_endpoints);
 
   void StopTest();
   void Test(int32_t quantity = -1);

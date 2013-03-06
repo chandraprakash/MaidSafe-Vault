@@ -86,16 +86,16 @@ class MaidAccount {
   serialised_type Serialise() const;
 
   serialised_info_type SerialiseAccountSyncInfo() const;
-  static std::pair<AccountInfo, std::vector<boost::filesystem::path>> ParseAccountSyncInfo(
+  static std::pair<AccountInfo, DiskBasedStorage::FileIdentities> ParseAccountSyncInfo(
       const serialised_info_type& serialised_info);
 
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
   void UpdatePmidTotals(const PmidTotals& pmid_totals);
 
-  std::vector<boost::filesystem::path> GetArchiveFileNames() const;
-  NonEmptyString GetArchiveFile(const boost::filesystem::path& filename) const;
-  void PutArchiveFile(const boost::filesystem::path& filename, const NonEmptyString& content);
+  DiskBasedStorage::FileIdentities GetArchiveFileIdenitities() const;
+  NonEmptyString GetArchiveFile(const DiskBasedStorage::FileIdentity& file_id) const;
+  void PutArchiveFile(const DiskBasedStorage::FileIdentity& file_id, const NonEmptyString& content);
 
   // This offers the strong exception guarantee
   template<typename Data>
