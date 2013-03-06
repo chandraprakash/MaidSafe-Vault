@@ -36,6 +36,7 @@ namespace vault {
 
 namespace test {
 
+class StandAloneDiskStorageTest_BEH_FileHandlers_Test;
 template<typename T>
 class DiskStorageTest;
 
@@ -63,6 +64,7 @@ class DiskBasedStorage {
 
   template<typename T>
   friend class test::DiskStorageTest;
+  friend class test::StandAloneDiskStorageTest_BEH_FileHandlers_Test;
 
  private:
   DiskBasedStorage(const DiskBasedStorage&);

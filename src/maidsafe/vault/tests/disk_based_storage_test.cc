@@ -175,11 +175,11 @@ std::string GenerateFileContent(std::vector<std::string>* element_names = nullpt
   return disk_file.SerializeAsString();
 }
 
-std::vector<boost::filesystem::path> VerifyFiles(uint32_t expected_file_num,
+DiskBasedStorage::FileIdentities VerifyFiles(uint32_t expected_file_num,
                                                  DiskBasedStorage& disk_based_storage) {
   std::future<uint32_t> file_count(disk_based_storage.GetFileCount());
   EXPECT_EQ(expected_file_num, file_count.get());
-  auto result_get_file_paths = disk_based_storage.GetFileNames();
+  auto result_get_file_paths = disk_based_storage.GetFileIdentities();
   return result_get_file_paths.get();
 }
 
@@ -238,21 +238,27 @@ TEST(StandAloneDiskStorageTest, BEH_FileHandlers) {
     fs::path file_path(file_name);
     file_names.insert(file_path);
     files.insert(std::make_pair(file_path, file_content));
-    disk_based_storage.PutFile(file_path, file_content);
+    disk_based_storage.PutFile(std::make_pair(file_numbers[i], hash), file_content);
   }
 
   EXPECT_EQ(VerifyFiles(num_files, disk_based_storage).size(), num_files);
-  std::vector<fs::path> retrieved_names(disk_based_storage.GetFileNames().get());
+  auto retrieved_names(disk_based_storage.GetFileIdentities().get());
   EXPECT_EQ(file_names.size(), retrieved_names.size());
-  for (auto& file_name : retrieved_names)
-    EXPECT_FALSE(file_names.find(file_name) == file_names.end());
+  for (auto& file_id : retrieved_names)
+    EXPECT_NE(file_names.find(disk_based_storage.GetFileName(file_id)), file_names.end());
 
-  EXPECT_THROW(disk_based_storage.GetFile("non_existent_file").get(), std::exception);
+  EXPECT_THROW(disk_based_storage.GetFile(std::make_pair(1, "non_existent_file")).get(),
+               std::exception);
   boost::system::error_code error_code;
   for (auto& file_entry : files) {
     fs::path path((*test_directory) / file_entry.first);
+    auto index(file_entry.first.string().find('.'));
+    auto id = atoi(file_entry.first.string().substr(0, index - 1).c_str());
+    NodeId hash(file_entry.first.string().substr(index + 1,
+        file_entry.first.string().size()), NodeId::kBase32);
     EXPECT_TRUE(fs::exists(path, error_code));
-    EXPECT_EQ(file_entry.second, disk_based_storage.GetFile(file_entry.first).get());
+    EXPECT_EQ(file_entry.second, disk_based_storage.GetFile(
+        DiskBasedStorage::FileIdentity(std::make_pair(id, hash.string()))).get());
   }
 }
 
@@ -265,7 +271,7 @@ TEST(StandAloneDiskStorageTest, BEH_ConstructorDestructor) {
   {
     DiskBasedStorage disk_based_storage(root_path);
     EXPECT_TRUE(fs::exists(root_path, error_code));
-    EXPECT_EQ(0, disk_based_storage.GetFileNames().get().size());
+    EXPECT_EQ(0, disk_based_storage.GetFileIdentities().get().size());
   }
   EXPECT_TRUE(fs::exists(root_path, error_code));
 
@@ -329,7 +335,7 @@ class DiskStorageTest : public testing::Test {
 
     // We expect file count = kTestEntryCount / max_files
     EXPECT_EQ(static_cast<size_t>(std::ceil(double(kTestEntryCount) / double(max_files))),
-              this->disk_based_storage_.GetFileNames().get().size());
+              this->disk_based_storage_.GetFileIdentities().get().size());
 
     // Delete all. All should be there.
     for (auto& item : names)
@@ -346,16 +352,16 @@ class DiskStorageTest : public testing::Test {
 
   void DeleteRandomElement() {
     auto it(element_names_.begin());
-    std::advance(it, std::rand_r() % element_names_.size());
+    std::advance(it, std::rand() % element_names_.size());
     typename T::name_type name((Identity(*it)));
     auto future(disk_based_storage_.Delete<T>(name));
     future.get();
   }
 
   void GetRandomFile() {
-    auto names(disk_based_storage_.GetFileNames().get());
+    auto names(disk_based_storage_.GetFileIdentities().get());
     auto it(names.begin());
-    std::advance(it, std::rand_r() % names.size());
+    std::advance(it, std::rand() % names.size());
     auto future(disk_based_storage_.GetFile(*it));
     future.get();
   }
@@ -381,10 +387,10 @@ class DiskStorageTest : public testing::Test {
     boost::system::error_code ec;
     std::string corrupting_string(RandomString(1000));
     while (rounds-- > 0) {
-      auto names(disk_based_storage_.GetFileNames().get());
+      auto names(disk_based_storage_.GetFileIdentities().get());
       auto it(names.begin());
-      std::advance(it, std::rand_r() % names.size());
-      fs::path file_path(*root_directory_ / *it);
+      std::advance(it, std::rand() % names.size());
+      fs::path file_path(*root_directory_ / disk_based_storage_.GetFileName(*it));
       switch (rounds % 3) {
         case 0: fs::remove(file_path, ec);
                 break;
@@ -415,8 +421,8 @@ TYPED_TEST_P(DiskStorageTest, BEH_ActionsWithCorruption) {
   for (int32_t i(0); i < num_files; ++i) {
     NonEmptyString file_content(this->GenerateFileContent(true));
     crypto::SHA512Hash hash(crypto::Hash<crypto::SHA512>(file_content));
-    std::string file_name(std::to_string(i) + "." + EncodeToBase32(hash));
-    this->disk_based_storage_.PutFile(file_name, file_content);
+//    std::string file_name(std::to_string(i) + "." + EncodeToBase32(hash));
+    this->disk_based_storage_.PutFile(std::make_pair(i, hash), file_content);
   }
 
   typedef typename DiskStorageTest<TypeParam>::Operations Ops;
