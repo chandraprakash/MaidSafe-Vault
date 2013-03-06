@@ -93,8 +93,6 @@ class Accumulator {
   std::vector<HandledRequest> Get(const Name& name) const;
   // Serialises all handled requests for the given account name.
   serialised_requests Serialise(const Name& name) const;
-  // Parses the list of serialised handled requests.
-  static std::vector<HandledRequest> Parse(const serialised_requests& serialised_requests_in);
 
   friend class test::AccumulatorTest_BEH_PushSingleResult_Test;
   friend class test::AccumulatorTest_BEH_PushSingleResultThreaded_Test;
@@ -115,6 +113,11 @@ class Accumulator {
   std::deque<HandledRequest> handled_requests_;
   const size_t kMaxPendingRequestsCount_, kMaxHandledRequestsCount_;
 };
+
+// Parses the list of serialised handled requests.
+template<typename Name>
+std::vector<typename Accumulator<Name>::HandledRequest> ParseHandledRequest(
+    const typename Accumulator<Name>::serialised_requests& serialised_requests_in);
 
 }  // namespace vault
 

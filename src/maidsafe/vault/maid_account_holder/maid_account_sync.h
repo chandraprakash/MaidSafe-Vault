@@ -21,8 +21,7 @@ namespace vault {
 
 class MaidAccountSync {
  public:
-  MaidAccountSync(const MaidName& maid_name);
-
+  explicit MaidAccountSync(const MaidName& maid_name);
   DiskBasedStorage::FileIdentities AddSyncInfoUpdate(
     const NodeId& source_id,
     const MaidAccount::serialised_info_type& serialised_account_info,

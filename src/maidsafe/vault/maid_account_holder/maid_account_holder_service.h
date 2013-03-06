@@ -142,6 +142,10 @@ class MaidAccountHolderService {
   void HandleReceivedSyncInfo(const NonEmptyString& serialised_account,
                               const NodeId& source_id,
                               const routing::ReplyFunctor& reply_functor);
+  void HandleSyncArchiveFiles(const NonEmptyString& serialised_archive_files,
+                              const NodeId& source_id,
+                              const routing::ReplyFunctor& reply_functor);
+
 //   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
 //   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
 //                     const passport::PublicPmid& p_pmid);

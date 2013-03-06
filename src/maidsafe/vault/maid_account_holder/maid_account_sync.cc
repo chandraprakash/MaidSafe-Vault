@@ -90,7 +90,7 @@ DiskBasedStorage::FileIdentities MaidAccountSync::AddSyncInfoUpdate(
   SyncInfoUpdate sync_update(
       source_id,
       account_info_and_file_ids.first,
-      Accumulator<passport::PublicMaid::name_type>::Parse(serialised_request),
+      ParseHandledRequest<MaidName>(serialised_request),
       account_info_and_file_ids.second,
       GetRequiredFileNames());
   sync_updates_.push_back(sync_update);

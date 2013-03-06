@@ -132,6 +132,9 @@ class MaidAccount {
   DiskBasedStorage archive_;
 };
 
+std::pair<MaidAccount::AccountInfo, DiskBasedStorage::FileIdentities> ParseMaidAccountSyncInfo(
+    const MaidAccount::serialised_info_type& serialised_info);
+
 }  // namespace vault
 
 }  // namespace maidsafe

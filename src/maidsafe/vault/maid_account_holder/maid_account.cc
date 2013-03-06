@@ -202,37 +202,6 @@ MaidAccount::serialised_info_type  MaidAccount::SerialiseAccountSyncInfo() const
   return serialised_info_type(NonEmptyString(proto_maid_account.SerializeAsString()));
 }
 
-std::pair<MaidAccount::AccountInfo, DiskBasedStorage::FileIdentities>
-    MaidAccount::ParseAccountSyncInfo(const serialised_info_type& serialised_info) {
-  protobuf::MaidAccount proto_maid_account;
-  MaidAccount::AccountInfo account_info;
-  proto_maid_account.ParseFromString(serialised_info->string());
-  for (auto index(0); index < proto_maid_account.pmid_totals_size(); ++index) {
-    auto proto_pmid_totals(proto_maid_account.pmid_totals(index));
-    nfs::PmidRegistration::serialised_type serialised_pmid_registration(
-        NonEmptyString(proto_pmid_totals.serialised_pmid_registration()));
-    PmidRecord pmid_record(proto_pmid_totals.pmid_record());
-    account_info.pmid_totals.push_back(PmidTotals(serialised_pmid_registration, pmid_record));
-  }
-  for (auto index(0); index < proto_maid_account.recent_put_data_size(); ++index) {
-    auto data_name(GetDataNameVariant(
-        static_cast<DataTagValue>(proto_maid_account.recent_put_data(index).type()),
-        Identity(proto_maid_account.recent_put_data(index).name())));
-    PutDataDetails put_data_details(data_name,
-                                    proto_maid_account.recent_put_data(index).cost());
-    account_info.recent_put_data.push_back(put_data_details);
-  }
-  account_info.total_claimed_available_size_by_pmids =
-      proto_maid_account.total_claimed_available_size_by_pmids();
-  account_info.total_put_data = proto_maid_account.total_put_data();
-  DiskBasedStorage::FileIdentities file_identities;
-  for (auto index(0); index < proto_maid_account.file_ids_size(); ++index) {
-    file_identities[proto_maid_account.file_ids(index).index()] =
-        Identity(proto_maid_account.file_ids(index).hash());
-  }
-  return std::make_pair(account_info, file_identities);
-}
-
 std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {
   return std::find_if(pmid_totals_.begin(),
                       pmid_totals_.end(),
@@ -279,6 +248,38 @@ void MaidAccount::PutArchiveFile(const DiskBasedStorage::FileIdentity& file_id,
                                  const NonEmptyString& content) {
   archive_.PutFile(file_id, content);
 }
+
+std::pair<MaidAccount::AccountInfo, DiskBasedStorage::FileIdentities>
+    ParseMaidAccountSyncInfo(const MaidAccount::serialised_info_type& serialised_info) {
+  protobuf::MaidAccount proto_maid_account;
+  MaidAccount::AccountInfo account_info;
+  proto_maid_account.ParseFromString(serialised_info->string());
+  for (auto index(0); index < proto_maid_account.pmid_totals_size(); ++index) {
+    auto proto_pmid_totals(proto_maid_account.pmid_totals(index));
+    nfs::PmidRegistration::serialised_type serialised_pmid_registration(
+        NonEmptyString(proto_pmid_totals.serialised_pmid_registration()));
+    PmidRecord pmid_record(proto_pmid_totals.pmid_record());
+    account_info.pmid_totals.push_back(PmidTotals(serialised_pmid_registration, pmid_record));
+  }
+  for (auto index(0); index < proto_maid_account.recent_put_data_size(); ++index) {
+    auto data_name(GetDataNameVariant(
+        static_cast<DataTagValue>(proto_maid_account.recent_put_data(index).type()),
+        Identity(proto_maid_account.recent_put_data(index).name())));
+    MaidAccount::PutDataDetails put_data_details(data_name,
+                                                 proto_maid_account.recent_put_data(index).cost());
+    account_info.recent_put_data.push_back(put_data_details);
+  }
+  account_info.total_claimed_available_size_by_pmids =
+      proto_maid_account.total_claimed_available_size_by_pmids();
+  account_info.total_put_data = proto_maid_account.total_put_data();
+  DiskBasedStorage::FileIdentities file_identities;
+  for (auto index(0); index < proto_maid_account.file_ids_size(); ++index) {
+    file_identities[proto_maid_account.file_ids(index).index()] =
+        Identity(proto_maid_account.file_ids(index).hash());
+  }
+  return std::make_pair(account_info, file_identities);
+}
+
 
 }  // namespace vault
 

@@ -13,22 +13,21 @@
 
 #include "boost/filesystem/operations.hpp"
 
+#include "maidsafe/vault/utils.h"
+
+
+namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
 namespace vault {
 
-PmidAccountHandler::PmidAccountHandler(const boost::filesystem::path& vault_root_dir)
+PmidAccountHandler::PmidAccountHandler(const fs::path& vault_root_dir)
     : kPmidAccountsRoot_(vault_root_dir / "pmids"),
       mutex_(),
       pmid_accounts_(),
       archived_accounts_() {
-  if (boost::filesystem::exists(kPmidAccountsRoot_)) {
-    if (!boost::filesystem::is_directory(kPmidAccountsRoot_))
-      ThrowError(CommonErrors::not_a_directory);
-  } else {
-    boost::filesystem::create_directories(kPmidAccountsRoot_);
-  }
+  detail::InitialiseDirectory(kPmidAccountsRoot_);
 }
 
 bool PmidAccountHandler::AddAccount(std::unique_ptr<PmidAccount> pmid_account) {
