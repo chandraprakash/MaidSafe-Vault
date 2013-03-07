@@ -41,6 +41,8 @@ class MaidAccountSyncHandler {
   MaidAccountSyncHandler(MaidAccountSyncHandler&&);
   MaidAccountSyncHandler& operator=(MaidAccountSyncHandler&&);
 
+  NonEmptyString SerilaiseFilesRequest(const DiskBasedStorage::FileIdentities& file_ids);
+
   mutable std::mutex mutex_;
   const boost::filesystem::path kMaidAccountsSyncRoot_;
   std::vector<std::unique_ptr<MaidAccountSync>> maid_accounts_sync_;

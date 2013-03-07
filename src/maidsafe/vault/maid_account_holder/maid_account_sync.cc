@@ -97,6 +97,10 @@ DiskBasedStorage::FileIdentities MaidAccountSync::AddSyncInfoUpdate(
   return sync_update.requested_file_ids;
 }
 
+ DiskBasedStorage::FileIdentities GetFileRequests(const NodeId& /*source_id*/) {
+   return DiskBasedStorage::FileIdentities();
+ }
+
 DiskBasedStorage::FileIdentities MaidAccountSync::GetRequiredFileNames() {
   // Check other requested/ available files and return missing bits required
   return DiskBasedStorage::FileIdentities();
@@ -113,6 +117,16 @@ bool MaidAccountSync::IsReadyForMerge() {
 
 bool MaidAccountSync::MergeSyncResults(std::unique_ptr<MaidAccount>& /*account*/,
                                        Accumulator<MaidName>& /*accumulator*/) {
+
+// Merge AccountInfo
+  std::vector<PmidTotals> merged_pmid_totals_;
+
+
+
+
+
+
+
   return true;
 }
 

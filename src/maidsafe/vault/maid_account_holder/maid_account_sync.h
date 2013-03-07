@@ -31,7 +31,7 @@ class MaidAccountSync {
   void AddDownloadedFile(DiskBasedStorage::FileIdentity file_name,
                          const NonEmptyString& file_contents);
 
-  std::vector<DiskBasedStorage::FileIdentity> GetFileRequests(const NodeId& source_id);
+  DiskBasedStorage::FileIdentities GetFileRequests(const NodeId& source_id);
   bool IsReadyForMerge();
   bool MergeSyncResults(std::unique_ptr<MaidAccount>& account, Accumulator<MaidName>& accumulator);
   MaidName name() const {return kMaidName_; }

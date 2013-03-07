@@ -254,7 +254,7 @@ void MaidAccountHolderService::HandleFileRequest(const NodeId& requester_node_id
                                                  const protobuf::GetArchiveFiles& requested_files,
                                                  std::shared_ptr<SharedResponse> shared_response) {
   assert(requested_files.IsInitialized());
-  for (auto& file_id : requested_files.file_hash_requested()) {
+  for (auto& file_id : requested_files.file_id()) {
     try {
       auto file_contents = maid_account_handler_.GetArchiveFile(account_name,
           DiskBasedStorage::FileIdentity(std::make_pair(file_id.index(), file_id.hash())));

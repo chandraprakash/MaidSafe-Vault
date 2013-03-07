@@ -280,6 +280,14 @@ std::pair<MaidAccount::AccountInfo, DiskBasedStorage::FileIdentities>
   return std::make_pair(account_info, file_identities);
 }
 
+DiskBasedStorage::FileIdentities ParseFileIdentities(
+    const std::vector<protobuf::FileId>& file_ids_pb) {
+  DiskBasedStorage::FileIdentities file_identities;
+  for (auto& file_id : file_ids_pb)
+    file_identities[file_id.index()] = Identity(file_id.hash());
+  return file_identities;
+}
+
 
 }  // namespace vault
 

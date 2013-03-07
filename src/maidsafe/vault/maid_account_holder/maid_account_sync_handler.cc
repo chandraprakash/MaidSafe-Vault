@@ -58,18 +58,18 @@ nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(
                                                  serialised_request);
     }
   }
-
-  return nfs::Reply(CommonErrors::success, NonEmptyString());  // FIXME need serialise method for required_files
+  return nfs::Reply(CommonErrors::success, SerilaiseFilesRequest(required_files));  // FIXME need serialise method for required_files
 }
 
 nfs::Reply MaidAccountSyncHandler::HandleSyncArchiveFiles(const NonEmptyString& archive_files,
-                                                          const NodeId& /*source_id*/) {
+                                                          const NodeId& source_id) {
   protobuf::SyncArchiveFiles sync_archive_files;
   if (!sync_archive_files.ParseFromString(archive_files.string())) {
     LOG(kError) << "Failed to parse SyncArchiveFiles";
     return nfs::Reply(CommonErrors::parsing_error);
   }
   MaidName maid_name(Identity((sync_archive_files.maid_name())));
+  DiskBasedStorage::FileIdentities required_files;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     auto itr = detail::FindAccount(maid_accounts_sync_, maid_name);
@@ -81,8 +81,20 @@ nfs::Reply MaidAccountSyncHandler::HandleSyncArchiveFiles(const NonEmptyString& 
         DiskBasedStorage::FileIdentity((std::make_pair(i.file_id().index(), i.file_id().hash()))),
         NonEmptyString(i.contents()));
     }
+    required_files = (*itr)->GetFileRequests(source_id);
   }
-  return nfs::Reply(CommonErrors::success);
+  return nfs::Reply(CommonErrors::success, SerilaiseFilesRequest(required_files));
+}
+
+NonEmptyString MaidAccountSyncHandler::SerilaiseFilesRequest(
+    const DiskBasedStorage::FileIdentities& file_ids) {
+  protobuf::GetArchiveFiles get_archive_files;
+  for (auto& required_file : file_ids) {
+    auto file_id(get_archive_files.add_file_id());
+    file_id->set_index(required_file.first);
+    file_id->set_hash(required_file.second.string());
+  }
+  return NonEmptyString(get_archive_files.SerializeAsString());
 }
 
 }  // namespace vault
