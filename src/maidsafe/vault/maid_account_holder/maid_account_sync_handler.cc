@@ -58,7 +58,7 @@ nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(
                                                  serialised_request);
     }
   }
-  return nfs::Reply(CommonErrors::success, SerilaiseFilesRequest(required_files));  // FIXME need serialise method for required_files
+  return nfs::Reply(CommonErrors::success, SerilaiseFilesRequest(required_files));
 }
 
 nfs::Reply MaidAccountSyncHandler::HandleSyncArchiveFiles(const NonEmptyString& archive_files,
