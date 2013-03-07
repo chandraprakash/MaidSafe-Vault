@@ -73,9 +73,7 @@ class PmidAccountHolderService {
   void HandlePmidHealth(const nfs::GenericMessage& generic_message,
                         const routing::ReplyFunctor& reply_functor);
   void CheckAccounts();
-  bool AssessRange(const PmidName& account_name,
-                   PmidAccount::DataHolderStatus account_status,
-                   bool is_connected);
+  void CheckResponsibility(const PmidName& account_name);
   void ValidateDataMessage(const nfs::DataMessage& data_message) const;
   void InformOfDataHolderDown(const PmidName& pmid_name);
   void InformOfDataHolderUp(const PmidName& pmid_name);

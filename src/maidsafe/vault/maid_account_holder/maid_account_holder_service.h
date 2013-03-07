@@ -133,6 +133,14 @@ class MaidAccountHolderService {
                        bool low_space,
                        std::false_type);
 
+  void HandleRegisterPmid(const nfs::GenericMessage& generic_message,
+                          const routing::ReplyFunctor& reply_functor);
+  void HandlePmidHealth(const nfs::GenericMessage& generic_message,
+                        const routing::ReplyFunctor& reply_functor);
+  void GetPmidHealth(const PmidName& pmid_name, const routing::ReplyFunctor& reply_functor);
+  void UpdatePmidHealth(const routing::ReplyFunctor& reply_functor);
+  void UpdatePmidHealth();
+
   void HandleSyncMessage(const nfs::GenericMessage& generic_message,
                          const routing::ReplyFunctor& reply_functor);
   void SendSyncData(const MaidName& account_name);

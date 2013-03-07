@@ -99,6 +99,28 @@ void MaidAccountHolderService::HandleGenericMessage(const nfs::GenericMessage& g
   }
 }
 
+void MaidAccountHolderService::HandleRegisterPmid(const nfs::GenericMessage& generic_message,
+                                                  const routing::ReplyFunctor& reply_functor) {
+//  Parse generic_message.content() as nfs::proto::PmidRegistration
+//  validate contents - use routing to get Maid key.  Use
+  GetPmidHealth(PmidName(generic_message.name()), reply_functor);
+}
+
+void MaidAccountHolderService::HandlePmidHealth(const nfs::GenericMessage& generic_message,
+                                                const routing::ReplyFunctor& reply_functor) {
+  GetPmidHealth(PmidName(generic_message.name()), reply_functor);
+}
+
+void MaidAccountHolderService::GetPmidHealth(const PmidName& pmid_name,
+                                             const routing::ReplyFunctor& reply_functor) {
+}
+
+void MaidAccountHolderService::UpdatePmidHealth(const routing::ReplyFunctor& reply_functor) {
+}
+
+void MaidAccountHolderService::UpdatePmidHealth() {
+}
+
 void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& generic_message,
                                                  const routing::ReplyFunctor& reply_functor) {
   NodeId source_id(generic_message.source().node_id);
@@ -128,51 +150,6 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
   }
 }
 
-// bool MaidAccountHolderService::HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid) {
-//   std::promise<bool> result_promise;
-//   std::future<bool> result_future = result_promise.get_future();
-//   auto get_key_future([this, p_maid, &result_promise] (
-//       std::future<maidsafe::passport::PublicPmid> key_future) {
-//     try {
-//       maidsafe::passport::PublicPmid p_pmid = key_future.get();
-//       result_promise.set_value(OnKeyFetched(p_maid, p_pmid));
-//     }
-//     catch(const std::exception& ex) {
-//       LOG(kError) << "Failed to get key for " << HexSubstr(p_maid.name().data.string())
-//                   << " : " << ex.what();
-//       result_promise.set_value(false);
-//     }
-//   });
-//   public_key_getter_.HandleGetKey<maidsafe::passport::PublicPmid>(p_maid.name(), get_key_future);
-//   return result_future.get();
-// }
-//
-// bool MaidAccountHolderService::OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
-//                                      const passport::PublicPmid& p_pmid) {
-//   if (!asymm::CheckSignature(asymm::PlainText(asymm::EncodeKey(p_pmid.public_key())),
-//                              p_pmid.validation_token(), p_maid.public_key())) {
-//     LOG(kError) << "Fetched pmid for " << HexSubstr(p_maid.name().data.string())
-//                 << " contains invalid token";
-//     return false;
-//   }
-//
-//   maidsafe::nfs::MaidAccount maid_account(p_maid.name().data);
-//   maid_account.PushPmidTotal(nfs::PmidTotals(nfs::PmidRegistration(p_maid.name().data,
-//                                                                   p_pmid.name().data,
-//                                                                   false,
-//                                                                   p_maid.validation_token(),
-//                                                                   p_pmid.validation_token()),
-//                                             nfs::PmidSize(p_pmid.name().data)));
-//   return WriteFile(kRootDir_ / maid_account.maid_id().string(),
-//                    maid_account.Serialise().string());
-// }
-
-// bool MaidAccountHolderService::HandleNewComer(const nfs::PmidRegistration& pmid_registration) {
-//   Identity maid_id(pmid_registration.maid_id());
-//   MaidAccount maid_account(maid_id);
-//   maid_account.PushPmidTotal(PmidTotals(pmid_registration, PmidRecord(maid_id)));
-//   return WriteFile(kRootDir_ / maid_id.string(), maid_account.Serialise().string());
-// }
 
 
 void MaidAccountHolderService::TriggerSync() {

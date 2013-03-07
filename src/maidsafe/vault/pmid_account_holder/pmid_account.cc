@@ -23,67 +23,28 @@ namespace vault {
 
 namespace {
 
-PmidRecord ParsePmidRecord(const PmidAccount::serialised_type& serialised_pmid_account) {
-  protobuf::PmidAccount pmid_account;
-  if (!pmid_account.ParseFromString(serialised_pmid_account.data.string()))
-    ThrowError(CommonErrors::parsing_error);
-  return PmidRecord(pmid_account.pmid_record());
-}
+//PmidRecord ParsePmidRecord(const PmidAccount::serialised_type& serialised_pmid_account) {
+//  protobuf::PmidAccount pmid_account;
+//  if (!pmid_account.ParseFromString(serialised_pmid_account.data.string()))
+//    ThrowError(CommonErrors::parsing_error);
+//  return PmidRecord(pmid_account.pmid_record());
+//}
 
 }  // namespace
 
-PmidAccount::DataElement::DataElement()
-    : data_name_variant(),
-      size() {}
-
-PmidAccount::DataElement::DataElement(const DataNameVariant& data_name_variant_in,
-                                      int32_t size_in)
-    : data_name_variant(data_name_variant_in),
-      size(size_in) {}
-
-PmidAccount::DataElement::DataElement(const PmidAccount::DataElement& other)
-    : data_name_variant(other.data_name_variant),
-      size(other.size) {}
-
-PmidAccount::DataElement& PmidAccount::DataElement::operator=(
-    const PmidAccount::DataElement& other) {
-  data_name_variant = other.data_name_variant;
-  size = other.size;
-  return *this;
-}
-
-PmidAccount::DataElement::DataElement(PmidAccount::DataElement&& other)
-    : data_name_variant(std::move(other.data_name_variant)),
-      size(std::move(other.size)) {}
-
-PmidAccount::DataElement& PmidAccount::DataElement::operator=(PmidAccount::DataElement&& other) {
-  data_name_variant = std::move(other.data_name_variant);
-  size = std::move(other.size);
-  return *this;
-}
-
-protobuf::DataElement PmidAccount::DataElement::ToProtobuf() const {
-  GetTagValueAndIdentityVisitor type_and_name_visitor;
-  auto type_and_name(boost::apply_visitor(type_and_name_visitor, data_name_variant));
-  protobuf::DataElement data_element;
-  data_element.set_name(type_and_name.second.string());
-  data_element.set_type(static_cast<int32_t>(type_and_name.first));
-  data_element.set_size(size);
-  return data_element;
-}
-
 PmidAccount::PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root)
-    : pmid_record_(pmid_name),
-      data_holder_status_(DataHolderStatus::kGoingUp),
-      recent_data_stored_(),
+    : kAccountName_(pmid_name),
       kRoot_(root / EncodeToBase32(pmid_name->string())),
+      historic_stored_space_(0),
+      historic_lost_space_(0),
+      claimed_available_size_(0),
+      data_holder_online_(true),
       archive_(kRoot_) {}
 
 PmidAccount::PmidAccount(const serialised_type& serialised_pmid_account,
                          const boost::filesystem::path& root)
     : pmid_record_(ParsePmidRecord(serialised_pmid_account)),
-      data_holder_status_(DataHolderStatus::kGoingUp),
-      recent_data_stored_(),
+      data_holder_online_(true),
       kRoot_(root / EncodeToBase32(pmid_record_.pmid_name->string())),
       archive_(kRoot_) {
   protobuf::PmidAccount pmid_account;
@@ -103,14 +64,14 @@ PmidAccount::~PmidAccount() {
   ArchiveAccount();
 }
 
-void PmidAccount::SetDataHolderGoingUp() {
+void PmidAccount::SetDataHolderUp() {
   RestoreRecentData();
-  data_holder_status_ = DataHolderStatus::kGoingUp;
+  data_holder_online_ = true;
 }
 
-void PmidAccount::SetDataHolderGoingDown() {
+void PmidAccount::SetDataHolderDown() {
   ArchiveRecentData();
-  data_holder_status_ = DataHolderStatus::kGoingDown;
+  data_holder_online_ = false;
 }
 
 std::vector<PmidAccount::DataElement> PmidAccount::ParseArchiveFile(int32_t /*index*/) const {

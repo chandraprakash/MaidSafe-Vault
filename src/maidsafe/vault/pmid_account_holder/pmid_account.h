@@ -37,49 +37,24 @@ class PmidAccount {
   typedef PmidName name_type;
   typedef TaggedValue<NonEmptyString, struct SerialisedPmidAccountTag> serialised_type;
 
-  struct DataElement {
-    DataElement();
-    DataElement(const DataNameVariant& data_name_variant_in, int32_t size_in);
-    DataElement(const DataElement& other);
-    DataElement& operator=(const DataElement& other);
-    DataElement(DataElement&& other);
-    DataElement& operator=(DataElement&& other);
-    protobuf::DataElement ToProtobuf() const;
-
-    DataNameVariant data_name_variant;
-    int32_t size;
-  };
-  enum class DataHolderStatus : int32_t { kDown, kGoingDown, kUp, kGoingUp };
-
   PmidAccount(const PmidName& pmid_name, const boost::filesystem::path& root);
   PmidAccount(const serialised_type& serialised_pmid_account, const boost::filesystem::path& root);
   ~PmidAccount();
 
-  // Returns true if notification to MetadataManagers should begin (i.e. state changed from kDown)
-  //      1,  call RestoreRecentData();
-  //      2,  change status
-  void SetDataHolderGoingUp();
-  void SetDataHolderUp() { data_holder_status_ = DataHolderStatus::kUp; }
-  // Returns true if notification to MetadataManagers should begin (i.e. state changed from kUp)
-  //      1,  call ArchiveRecentData();
-  //      2,  change status
-  void SetDataHolderGoingDown();
-  void SetDataHolderDown() { data_holder_status_ = DataHolderStatus::kDown; }
-  int32_t GetArchiveFileCount() const { return archive_.GetFileCount().get(); }
-  std::vector<DataElement> ParseArchiveFile(int32_t index) const;
-  // Used when Data Holder has gone down or goes to the proximal group of nodes,
-  // but this vault is still responsible for the account.
-  void ArchiveRecentData();
+  void SetDataHolderUp();
+  void SetDataHolderDown();
 
+  int32_t GetArchiveFileCount() const { return archive_.GetFileCount().get(); }
   // Used when this vault is no longer responsible for the account
   void ArchiveAccount();
   void RestoreAccount();
 
-  // Used in synchronisation with other Pmid Account Holders - serialises all in-memory data
-  serialised_type Serialise() const;
-  std::vector<boost::filesystem::path> GetArchiveFileNames() const;
-  NonEmptyString GetArchiveFile(const boost::filesystem::path& path) const;
-  void PutArchiveFile(const boost::filesystem::path& path, const NonEmptyString& content);
+  // Used in synchronisation with other Pmid Account Holders and also to periodically backup all
+  // in-memory data to disk
+  serialised_type SerialiseToDisk() const;
+  std::vector<boost::filesystem::path> GetFileNames() const;
+  NonEmptyString GetFile(const boost::filesystem::path& path) const;
+  void PutFile(const boost::filesystem::path& path, const NonEmptyString& content);
 
   // Throw if the data is a duplicate
   template<typename Data>
@@ -88,7 +63,7 @@ class PmidAccount {
   void DeleteData(const typename Data::name_type& name);
 
   name_type name() const { return pmid_record_.pmid_name; }
-  DataHolderStatus data_holder_status() const { return data_holder_status_; }
+  bool DataHolderOnline() const { return data_holder_online_; }
   PmidRecord pmid_record() const { return pmid_record_; }
 
  private:
@@ -101,11 +76,13 @@ class PmidAccount {
   void RestoreRecentData();
   std::future<void> ArchiveDataRecord(const PmidAccount::DataElement data_element);
 
-  PmidRecord pmid_record_;
-  DataHolderStatus data_holder_status_;
-  std::deque<DataElement> recent_data_stored_;
+  const PmidName kAccountName_;
   const boost::filesystem::path kRoot_;
-  DiskBasedStorage archive_;
+  int64_t historic_stored_space_;
+  int64_t historic_lost_space_;
+  int64_t claimed_available_size_;
+  bool data_holder_online_;
+  DiskBasedStorage data_held_;
 };
 
 }  // namespace vault

@@ -84,12 +84,8 @@ void PmidAccountHolderService::TriggerSync(
 void PmidAccountHolderService::CheckAccounts() {
   // Non-archived
   std::vector<PmidName> accounts_held(pmid_account_handler_.GetAccountNames());
-  for (auto it(accounts_held.begin()); it != accounts_held.end(); ++it) {
-    bool is_connected(routing_.IsConnectedVault(NodeId(*it)));
-    PmidAccount::DataHolderStatus account_status(pmid_account_handler_.AccountStatus(*it));
-    if (AssessRange(*it, account_status, is_connected))
-      it = accounts_held.erase(it);
-  }
+  for (auto& account_name : accounts_held)
+    IsResponsibleFor(account_name);
 
   // Archived
   pmid_account_handler_.PruneArchivedAccounts(
@@ -99,26 +95,23 @@ void PmidAccountHolderService::CheckAccounts() {
       });
 }
 
-bool PmidAccountHolderService::AssessRange(const PmidName& account_name,
-                                           PmidAccount::DataHolderStatus account_status,
-                                           bool is_connected) {
-  int temp_int(0);
-  switch (temp_int/*routing_.IsNodeIdInGroupRange(NodeId(account_name))*/) {
-    // TODO(Team): Change to check the range
-    case 0 /*routing::kOutwithRange*/:
-        pmid_account_handler_.MoveAccountToArchive(account_name);
-        return true;
-    case 1 /*routing::kInProximalRange*/:
-        // serialise the memory deque and put to file
-        return false;
-    case 2 /*routing::kInRange*/:
-        if (account_status == PmidAccount::DataHolderStatus::kUp && !is_connected) {
-          InformOfDataHolderDown(account_name);
-        } else if (account_status == PmidAccount::DataHolderStatus::kDown && is_connected) {
-          InformOfDataHolderUp(account_name);
-        }
-        return false;
-    default: return false;
+void PmidAccountHolderService::CheckResponsibility(const PmidName& account_name) {
+  bool is_connected(routing_.IsConnectedVault(NodeId(account_name)));
+  bool marked_as_online(pmid_account_handler_.AccountStatus(account_name));
+  switch (routing_.IsNodeIdInGroupRange(NodeId(account_name))) {
+    case routing::kOutwithRange:
+    case routing::kInProximalRange:
+      pmid_account_handler_.MoveAccountToArchive(account_name);
+      break;
+    case routing::kInRange:
+      if (marked_as_online && !is_connected) {
+        InformOfDataHolderDown(account_name);
+      } else if (!marked_as_online && is_connected) {
+        InformOfDataHolderUp(account_name);
+      }
+      break;
+    default:
+      break;
   }
 }
 
@@ -139,20 +132,16 @@ void PmidAccountHolderService::ValidateSender(const nfs::DataMessage& data_messa
 }
 
 void PmidAccountHolderService::InformOfDataHolderDown(const PmidName& pmid_name) {
-  pmid_account_handler_.SetDataHolderGoingDown(pmid_name);
   InformAboutDataHolder(pmid_name, false);
   pmid_account_handler_.SetDataHolderDown(pmid_name);
 }
 
 void PmidAccountHolderService::InformOfDataHolderUp(const PmidName& pmid_name) {
-  pmid_account_handler_.SetDataHolderGoingUp(pmid_name);
   InformAboutDataHolder(pmid_name, true);
   pmid_account_handler_.SetDataHolderUp(pmid_name);
 }
 
 void PmidAccountHolderService::InformAboutDataHolder(const PmidName& pmid_name, bool node_up) {
-  // TODO(Team): Decide on a better strategy instead of sleep
-  Sleep(boost::posix_time::minutes(3));
   auto names(pmid_account_handler_.GetArchiveFileNames(pmid_name));
   for (auto ritr(names.rbegin()); ritr != names.rend(); ++ritr) {
     if (StatusHasReverted(pmid_name, node_up)) {
@@ -178,15 +167,6 @@ std::set<PmidName> PmidAccountHolderService::GetDataNamesInFile(
   return metadata_manager_ids;
 }
 
-bool PmidAccountHolderService::StatusHasReverted(const PmidName& pmid_name, bool node_up) const {
-  PmidAccount::DataHolderStatus status(pmid_account_handler_.AccountStatus(pmid_name));
-  if (status == PmidAccount::DataHolderStatus::kGoingDown && node_up)
-    return true;
-  else if (status == PmidAccount::DataHolderStatus::kGoingUp && !node_up)
-    return true;
-  else
-    return false;
-}
 
 void PmidAccountHolderService::RevertMessages(const PmidName& pmid_name,
                                               const std::vector<fs::path>::reverse_iterator& begin,
