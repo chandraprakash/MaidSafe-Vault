@@ -87,14 +87,12 @@ DiskBasedStorage::FileIdentities MaidAccountSync::AddSyncInfoUpdate(
     const Accumulator<passport::PublicMaid::name_type>::serialised_requests& serialised_request) {
 
   auto account_info_and_file_ids = ParseMaidAccountSyncInfo(serialised_account_info);
-  SyncInfoUpdate sync_update(
-      source_id,
-      account_info_and_file_ids.first,
-      ParseHandledRequest<MaidName>(serialised_request),
-      account_info_and_file_ids.second,
-      GetRequiredFileNames());
-  sync_updates_.push_back(sync_update);
-  return sync_update.requested_file_ids;
+  sync_updates_.push_back(SyncInfoUpdate(source_id,
+                                         account_info_and_file_ids.first,
+                                         ParseHandledRequest<MaidName>(serialised_request),
+                                         account_info_and_file_ids.second,
+                                         GetRequiredFileNames()));
+  return sync_updates_.back().requested_file_ids;
 }
 
  DiskBasedStorage::FileIdentities GetFileRequests(const NodeId& /*source_id*/) {
