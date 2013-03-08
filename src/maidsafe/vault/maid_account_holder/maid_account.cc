@@ -253,7 +253,9 @@ std::pair<MaidAccount::AccountInfo, DiskBasedStorage::FileIdentities>
     ParseMaidAccountSyncInfo(const MaidAccount::serialised_info_type& serialised_info) {
   protobuf::MaidAccount proto_maid_account;
   MaidAccount::AccountInfo account_info;
-  proto_maid_account.ParseFromString(serialised_info->string());
+  if (!proto_maid_account.ParseFromString(serialised_info->string())) {
+    ThrowError(CommonErrors::parsing_error);
+  }
   for (auto index(0); index < proto_maid_account.pmid_totals_size(); ++index) {
     auto proto_pmid_totals(proto_maid_account.pmid_totals(index));
     nfs::PmidRegistration::serialised_type serialised_pmid_registration(
@@ -279,15 +281,6 @@ std::pair<MaidAccount::AccountInfo, DiskBasedStorage::FileIdentities>
   }
   return std::make_pair(account_info, file_identities);
 }
-
-DiskBasedStorage::FileIdentities ParseFileIdentities(
-    const std::vector<protobuf::FileId>& file_ids_pb) {
-  DiskBasedStorage::FileIdentities file_identities;
-  for (auto& file_id : file_ids_pb)
-    file_identities[file_id.index()] = Identity(file_id.hash());
-  return file_identities;
-}
-
 
 }  // namespace vault
 

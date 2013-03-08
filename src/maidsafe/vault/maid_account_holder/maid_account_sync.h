@@ -35,7 +35,8 @@ class MaidAccountSync {
   bool IsReadyForMerge();
   bool MergeSyncResults(std::unique_ptr<MaidAccount>& account, Accumulator<MaidName>& accumulator);
   MaidName name() const {return kMaidName_; }
-
+// IsAccountUpdate(); // Only usefull for new/outdated account holders
+// bool IsPeriodicTrigger();
  private:
   MaidAccountSync(MaidAccountSync&& other);
 

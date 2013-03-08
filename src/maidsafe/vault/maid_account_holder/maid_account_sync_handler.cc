@@ -38,27 +38,30 @@ nfs::Reply MaidAccountSyncHandler::HandleReceivedSyncInfo(
     LOG(kError) << "Failed to parse SyncInfo";
     return nfs::Reply(CommonErrors::parsing_error);
   }
-
-  MaidAccount::serialised_info_type serialised_account_info(
-                                        NonEmptyString(sync_info.maid_account()));
-  Accumulator<MaidName>::serialised_requests serialised_request(
-                                        NonEmptyString(sync_info.accumulator_entries()));
-  MaidName maid_name(Identity((sync_info.maid_name())));
-  DiskBasedStorage::FileIdentities required_files;
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto itr = detail::FindAccount(maid_accounts_sync_, maid_name);
-    if (itr == maid_accounts_sync_.end()) { //  Sync for account not exists
-      std::unique_ptr<MaidAccountSync> maid_account_sync(new MaidAccountSync(maid_name));
-      required_files = maid_account_sync->AddSyncInfoUpdate(source_id, serialised_account_info,
-                                                            serialised_request);
-      maid_accounts_sync_.push_back(std::move(maid_account_sync));
-    } else {
-      required_files = (*itr)->AddSyncInfoUpdate(source_id, serialised_account_info,
-                                                 serialised_request);
+  try {
+    MaidAccount::serialised_info_type serialised_account_info(
+        NonEmptyString(sync_info.maid_account()));
+    Accumulator<MaidName>::serialised_requests serialised_request(
+        NonEmptyString(sync_info.accumulator_entries()));
+    MaidName maid_name(Identity((sync_info.maid_name())));
+    DiskBasedStorage::FileIdentities required_files;
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      auto itr = detail::FindAccount(maid_accounts_sync_, maid_name);
+      if (itr == maid_accounts_sync_.end()) { //  Sync for account not exists
+        std::unique_ptr<MaidAccountSync> maid_account_sync(new MaidAccountSync(maid_name));
+        required_files = maid_account_sync->AddSyncInfoUpdate(source_id, serialised_account_info,
+                                                              serialised_request);
+        maid_accounts_sync_.push_back(std::move(maid_account_sync));
+      } else {
+        required_files = (*itr)->AddSyncInfoUpdate(source_id, serialised_account_info,
+                                                   serialised_request);
+      }
     }
+    return nfs::Reply(CommonErrors::success, SerilaiseFilesRequest(required_files));
+  } catch (const std::exception& /*ex*/) {
+    return nfs::Reply(CommonErrors::unknown); // TODO add error for this type ?
   }
-  return nfs::Reply(CommonErrors::success, SerilaiseFilesRequest(required_files));
 }
 
 nfs::Reply MaidAccountSyncHandler::HandleSyncArchiveFiles(const NonEmptyString& archive_files,
@@ -66,24 +69,29 @@ nfs::Reply MaidAccountSyncHandler::HandleSyncArchiveFiles(const NonEmptyString& 
   protobuf::SyncArchiveFiles sync_archive_files;
   if (!sync_archive_files.ParseFromString(archive_files.string())) {
     LOG(kError) << "Failed to parse SyncArchiveFiles";
+    // TODO request files from other nodes, Notify sync object about this failure
     return nfs::Reply(CommonErrors::parsing_error);
   }
-  MaidName maid_name(Identity((sync_archive_files.maid_name())));
-  DiskBasedStorage::FileIdentities required_files;
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto itr = detail::FindAccount(maid_accounts_sync_, maid_name);
-    if (itr == maid_accounts_sync_.end())
-      return nfs::Reply(CommonErrors::unknown);  // TODO add error for this type ?
+  try {
+    MaidName maid_name(Identity((sync_archive_files.maid_name())));
+    DiskBasedStorage::FileIdentities required_files;
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      auto itr = detail::FindAccount(maid_accounts_sync_, maid_name);
+      if (itr == maid_accounts_sync_.end())
+        return nfs::Reply(CommonErrors::unknown);  // TODO add error for this type ?
 
-    for (auto &i: sync_archive_files.files()) {
-      (*itr)->AddDownloadedFile(
-        DiskBasedStorage::FileIdentity((std::make_pair(i.file_id().index(), i.file_id().hash()))),
-        NonEmptyString(i.contents()));
+      for (auto &i: sync_archive_files.files()) {
+        (*itr)->AddDownloadedFile(
+          DiskBasedStorage::FileIdentity((std::make_pair(i.file_id().index(), i.file_id().hash()))),
+          NonEmptyString(i.contents()));
+      }
+      required_files = (*itr)->GetFileRequests(source_id);
     }
-    required_files = (*itr)->GetFileRequests(source_id);
+    return nfs::Reply(CommonErrors::success, SerilaiseFilesRequest(required_files));
+  } catch (const std::exception& /*ex*/) {
+    return nfs::Reply(CommonErrors::unknown); // TODO add error for this type ?
   }
-  return nfs::Reply(CommonErrors::success, SerilaiseFilesRequest(required_files));
 }
 
 NonEmptyString MaidAccountSyncHandler::SerilaiseFilesRequest(
