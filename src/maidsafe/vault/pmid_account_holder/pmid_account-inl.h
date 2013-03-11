@@ -21,27 +21,17 @@ namespace vault {
 
 template<typename Data>
 void PmidAccount::PutData(const typename Data::name_type& name, int32_t size) {
-  for (auto& record : recent_data_stored_) {
-    if (detail::IsDataElement<Data>(name, record.data_name_variant))
-      return;
-  }
-
-  DataElement data_element(GetDataNameVariant(Data::type_enum_value(), Identity(name)), size);
-  recent_data_stored_.push_back(data_element);
-  pmid_record_.historic_stored_space += size;
+  auto store_future(data_held_.Store<Data>(name, size));
+  store_future.get();
+  historic_stored_space_ += size;
 }
 
 template<typename Data>
 void PmidAccount::DeleteData(const typename Data::name_type& name) {
-  for (auto itr(recent_data_stored_.begin()); itr != recent_data_stored_.end(); ++itr) {
-    if (detail::IsDataElement<Data>(name, itr->data_name_variant)) {
-      pmid_record_.historic_stored_space -= itr->size;
-      recent_data_stored_.erase(itr);
-      archive_.Delete<Data>(name);
-    }
-  }
+  auto delete_future(data_held_.Delete<Data>(name));
+  auto size(delete_future.get());
+  historic_stored_space_ -= size;
 }
-
 
 }  // namespace vault
 

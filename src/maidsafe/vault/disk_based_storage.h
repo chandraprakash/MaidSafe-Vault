@@ -43,7 +43,7 @@ class DiskStorageTest;
 
 class DiskBasedStorage {
  public:
-  explicit DiskBasedStorage(const boost::filesystem::path& root);
+  DiskBasedStorage(const boost::filesystem::path& root, bool allow_duplicates);
 
   // Element handling
   template<typename Data>
@@ -78,6 +78,12 @@ class DiskBasedStorage {
 
   template<typename Data>
   void AddToLatestFile(const typename Data::name_type& name, int32_t value);
+  // Returns reverse_iterator to file and index number of element in file.
+  template<typename Data>
+  bool FindElement(const typename Data::name_type& name,
+                   FileIdentity* file_id = nullptr,
+                   int* index = nullptr,
+                   protobuf::DiskStoredFile* file = nullptr);
   template<typename Data>
   void AddElement(const typename Data::name_type& name,
                   int32_t value,
@@ -105,6 +111,7 @@ class DiskBasedStorage {
                  const FileIdentity& file_id);
 
   const boost::filesystem::path kRoot_;
+  const bool kAllowDuplicates_;
   mutable Active active_;
   FileIdentities file_ids_;
 };

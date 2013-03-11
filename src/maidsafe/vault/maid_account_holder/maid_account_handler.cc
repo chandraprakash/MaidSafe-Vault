@@ -16,6 +16,7 @@
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_totals_pb.h"
 
 
 namespace fs = boost::filesystem;
@@ -57,7 +58,7 @@ void MaidAccountHandler::UnregisterPmid(const MaidName& account_name, const Pmid
 }
 
 void MaidAccountHandler::UpdatePmidTotals(const MaidName& account_name,
-                                          const PmidTotals& pmid_totals) {
+                                          const protobuf::PmidTotals& pmid_totals) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(detail::FindAccount(maid_accounts_, account_name));
   if (itr == maid_accounts_.end())

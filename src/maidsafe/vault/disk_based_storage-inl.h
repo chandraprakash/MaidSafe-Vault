@@ -40,6 +40,8 @@ std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name, 
   auto promise(std::make_shared<std::promise<void>>());
   active_.Send([name, value, promise, this] {
                  try {
+                   if (!kAllowDuplicates_ && this->FindElement<Data>(name))
+                     ThrowError(VaultErrors::unique_data_clash);
                    this->AddToLatestFile<Data>(name, value);
                    promise->set_value();
                  }
@@ -49,6 +51,31 @@ std::future<void> DiskBasedStorage::Store(const typename Data::name_type& name, 
                  }
                });
   return promise->get_future();
+}
+
+template<typename Data>
+bool DiskBasedStorage::FindElement(const typename Data::name_type& name,
+                                   DiskBasedStorage::FileIdentity* file_id,
+                                   int* index,
+                                   protobuf::DiskStoredFile* file) {
+  auto ritr(file_ids_.rbegin());
+  if (!(*ritr).second.IsInitialised())
+    ++ritr;
+
+  for (; ritr != file_ids_.rend(); ++ritr) {
+    auto disk_stored_file(ParseFile(*ritr));
+    int entry_index(GetEntryIndex<Data>(name, disk_stored_file));
+    if (entry_index >= 0) {
+      if (file_id) {
+        assert(index && file);
+        *file_id = *ritr;
+        *index = entry_index;
+        *file = disk_stored_file;
+      }
+      return true;
+    }
+  }
+  return false;
 }
 
 template<typename Data>
@@ -96,22 +123,15 @@ std::future<int32_t> DiskBasedStorage::Delete(const typename Data::name_type& na
 
 template<typename Data>
 void DiskBasedStorage::FindAndDeleteEntry(const typename Data::name_type& name, int32_t& value) {
-  auto ritr(file_ids_.rbegin());
-  if (!(*ritr).second.IsInitialised())
-    ++ritr;
+  FileIdentity file_id;
+  int index(0);
+  protobuf::DiskStoredFile file;
+  if (!this->FindElement<Data>(name, &file_id, &index, &file))
+    ThrowError(CommonErrors::no_such_element);
 
-  for (; ritr != file_ids_.rend(); ++ritr) {
-    auto file(ParseFile(*ritr));
-    int index(GetEntryIndex<Data>(name, file));
-    if (index >= 0) {
-      value = file.element(index).value();
-      DeleteEntry(index, file);
-      SaveChangedFile(*ritr, file);
-      return;
-    }
-  }
-
-  ThrowError(CommonErrors::no_such_element);
+  value = file.element(index).value();
+  DeleteEntry(index, file);
+  SaveChangedFile(file_id, file);
 }
 
 template<typename Data>

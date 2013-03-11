@@ -30,6 +30,8 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace protobuf { class PmidTotals; }
+
 namespace test {
 
 class MaidAccountHandlerTest;
@@ -45,7 +47,7 @@ class MaidAccountHandler {
 
   void RegisterPmid(const MaidName& account_name, const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const MaidName& account_name, const PmidName& pmid_name);
-  void UpdatePmidTotals(const MaidName& account_name, const PmidTotals& pmid_totals);
+  void UpdatePmidTotals(const MaidName& account_name, const protobuf::PmidTotals& pmid_totals);
 
   // Sync operations
   std::vector<MaidName> GetAccountNames() const;

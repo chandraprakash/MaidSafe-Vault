@@ -39,14 +39,14 @@ PmidAccount::PmidAccount(const PmidName& pmid_name, const boost::filesystem::pat
       historic_lost_space_(0),
       claimed_available_size_(0),
       data_holder_online_(true),
-      archive_(kRoot_) {}
+      data_held_(kRoot_, false) {}
 
 PmidAccount::PmidAccount(const serialised_type& serialised_pmid_account,
                          const boost::filesystem::path& root)
     : pmid_record_(ParsePmidRecord(serialised_pmid_account)),
       data_holder_online_(true),
       kRoot_(root / EncodeToBase32(pmid_record_.pmid_name->string())),
-      archive_(kRoot_) {
+      data_held_(kRoot_, false) {
   protobuf::PmidAccount pmid_account;
   if (!pmid_account.ParseFromString(serialised_pmid_account->string())) {
     LOG(kError) << "Failed to parse pmid_account.";
@@ -75,12 +75,12 @@ void PmidAccount::SetDataHolderDown() {
 }
 
 std::vector<PmidAccount::DataElement> PmidAccount::ParseArchiveFile(int32_t /*index*/) const {
-//  std::vector<boost::filesystem::path> files(archive_.GetFileNames().get());
+//  std::vector<boost::filesystem::path> files(data_held_.GetFileNames().get());
   std::vector<PmidAccount::DataElement> data_elements;
 //  for (auto& file : files) {
 //    if (static_cast<size_t>(index) == ExtractFileIndexFromFilename(file.filename().string())) {
 //      protobuf::DiskStoredFile archived_pmid_data;
-//      archived_pmid_data.ParseFromString(archive_.GetFile(file).get().string());
+//      archived_pmid_data.ParseFromString(data_held_.GetFile(file).get().string());
 //      for (auto& data_record : archived_pmid_data.data_stored()) {
 //        DataElement data_element(GetDataNameVariant(static_cast<DataTagValue>(data_record.type()),
 //                                                    Identity(data_record.name())),
@@ -130,118 +130,25 @@ PmidAccount::serialised_type PmidAccount::Serialise() const {
 }
 
 std::vector<boost::filesystem::path> PmidAccount::GetArchiveFileNames() const {
-  return archive_.GetFileNames().get();
+  return data_held_.GetFileNames().get();
 }
 
 NonEmptyString PmidAccount::GetArchiveFile(const boost::filesystem::path& path) const {
-  return archive_.GetFile(path).get();
+  return data_held_.GetFile(path).get();
 }
 
 void PmidAccount::PutArchiveFile(const boost::filesystem::path& path,
                                  const NonEmptyString& content) {
-  archive_.PutFile(path, content);
+  data_held_.PutFile(path, content);
 }
 
-void PmidAccount::ArchiveRecentData() {
-  std::vector<std::future<void>> archiving;
-  for (auto& record : recent_data_stored_)
-    archiving.emplace_back(ArchiveDataRecord(record));
-  for (auto& archived : archiving)
-    archived.get();
-  recent_data_stored_.clear();
-}
-
-void PmidAccount::RestoreRecentData() {
-  int32_t file_count(archive_.GetFileCount().get());
-  std::vector<DataElement> latest_elements(ParseArchiveFile(file_count - 1));
-  for (auto& element : latest_elements)
-    recent_data_stored_.push_back(element);
-}
-
-std::future<void> PmidAccount::ArchiveDataRecord(const PmidAccount::DataElement record) {
-  std::future<void> result;
-  GetTagValueAndIdentityVisitor type_and_name_visitor;
-  auto type_and_name(boost::apply_visitor(type_and_name_visitor, record.data_name_variant));
-  switch (type_and_name.first) {
-    case DataTagValue::kAnmidValue: {
-      typedef is_maidsafe_data<DataTagValue::kAnmidValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kAnsmidValue: {
-      typedef is_maidsafe_data<DataTagValue::kAnsmidValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kAntmidValue: {
-      typedef is_maidsafe_data<DataTagValue::kAntmidValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kAnmaidValue: {
-      typedef is_maidsafe_data<DataTagValue::kAnmaidValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kMaidValue: {
-      typedef is_maidsafe_data<DataTagValue::kMaidValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kPmidValue: {
-      typedef is_maidsafe_data<DataTagValue::kPmidValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kMidValue: {
-      typedef is_maidsafe_data<DataTagValue::kMidValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kSmidValue: {
-      typedef is_maidsafe_data<DataTagValue::kSmidValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kTmidValue: {
-      typedef is_maidsafe_data<DataTagValue::kTmidValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kAnmpidValue: {
-      typedef is_maidsafe_data<DataTagValue::kAnmpidValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kMpidValue: {
-      typedef is_maidsafe_data<DataTagValue::kMpidValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kImmutableDataValue: {
-      typedef is_maidsafe_data<DataTagValue::kImmutableDataValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kOwnerDirectoryValue: {
-      typedef is_maidsafe_data<DataTagValue::kOwnerDirectoryValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kGroupDirectoryValue: {
-      typedef is_maidsafe_data<DataTagValue::kGroupDirectoryValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    case DataTagValue::kWorldDirectoryValue: {
-      typedef is_maidsafe_data<DataTagValue::kWorldDirectoryValue>::data_type data_type;
-      result = archive_.Store<data_type>(data_type::name_type(type_and_name.second), record.size);
-      break;
-    }
-    default:
-      LOG(kError) << "Unhandled data type";
-  }
-  return std::move(result);
+protobuf::PmidTotals PmidAccount::pmid_totals() const {
+  protobuf::PmidTotals proto_totals;
+  proto_totals.set_pmid_name(kAccountName_->string());
+  proto_totals.set_historic_stored_space(historic_stored_space_);
+  proto_totals.set_historic_lost_space(historic_lost_space_);
+  proto_totals.set_claimed_available_size(claimed_available_size_);
+  return proto_totals;
 }
 
 }  // namespace vault

@@ -74,8 +74,9 @@ void SortFile(protobuf::DiskStoredFile& file) {
 }  // namespace detail
 
 
-DiskBasedStorage::DiskBasedStorage(const fs::path& root)
+DiskBasedStorage::DiskBasedStorage(const fs::path& root, bool allow_duplicates)
     : kRoot_(root),
+      kAllowDuplicates_(allow_duplicates),
       active_(),
       file_ids_() {
   detail::InitialiseDirectory(kRoot_);

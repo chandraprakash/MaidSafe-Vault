@@ -89,11 +89,11 @@ MaidAccount::PutDataDetails& MaidAccount::PutDataDetails::operator=(PutDataDetai
 MaidAccount::MaidAccount(const MaidName& maid_name, const fs::path& root)
     : kMaidName_(maid_name),
       type_and_name_visitor_(),
-      pmid_totals_(),
+      pmid_details_(),
       recent_put_data_(),
       total_claimed_available_size_by_pmids_(0),
       total_put_data_(0),
-      archive_(root / EncodeToBase32(kMaidName_.data)) {}
+      archive_(root / EncodeToBase32(kMaidName_.data), true) {}
 
 MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const fs::path& root)
     : kMaidName_([&serialised_maid_account]()->Identity {
@@ -102,22 +102,22 @@ MaidAccount::MaidAccount(const serialised_type& serialised_maid_account, const f
                      return Identity(proto_maid_account.maid_name());
                  }()),
       type_and_name_visitor_(),
-      pmid_totals_(),
+      pmid_details_(),
       recent_put_data_(),
       total_claimed_available_size_by_pmids_(0),
       total_put_data_(0),
-      archive_(root / EncodeToBase32(kMaidName_.data)) {
+      archive_(root / EncodeToBase32(kMaidName_.data), true) {
   protobuf::MaidAccount proto_maid_account;
   if (!proto_maid_account.ParseFromString(serialised_maid_account->string())) {
     LOG(kError) << "Failed to parse maid_account.";
     ThrowError(CommonErrors::parsing_error);
   }
 
-  for (int i(0); i != proto_maid_account.pmid_totals_size(); ++i) {
-    pmid_totals_.emplace_back(
+  for (int i(0); i != proto_maid_account.pmid_details_size(); ++i) {
+    pmid_details_.emplace_back(
         nfs::PmidRegistration::serialised_type(NonEmptyString(
-            proto_maid_account.pmid_totals(i).serialised_pmid_registration())),
-        PmidRecord(proto_maid_account.pmid_totals(i).pmid_record()));
+            proto_maid_account.pmid_details(i).serialised_pmid_registration())),
+        PmidRecord(proto_maid_account.pmid_details(i).pmid_record()));
   }
 
   for (int i(0); i != proto_maid_account.recent_put_data_size(); ++i) {
@@ -137,11 +137,11 @@ MaidAccount::serialised_type MaidAccount::Serialise() const {
   protobuf::MaidAccount proto_maid_account;
   proto_maid_account.set_maid_name(kMaidName_->string());
 
-  for (auto& pmid_total : pmid_totals_) {
-    auto proto_pmid_totals(proto_maid_account.add_pmid_totals());
-    proto_pmid_totals->set_serialised_pmid_registration(
-        pmid_total.serialised_pmid_registration->string());
-    *(proto_pmid_totals->mutable_pmid_record()) = pmid_total.pmid_record.ToProtobuf();
+  for (auto& pmid_detail : pmid_details_) {
+    auto proto_pmid_details(proto_maid_account.add_pmid_details());
+    proto_pmid_details->set_serialised_pmid_registration(
+        pmid_detail.serialised_pmid_registration->string());
+    *(proto_pmid_details->mutable_pmid_record()) = pmid_detail.pmid_record.ToProtobuf();
   }
 
   for (auto& recent_put_data_item : recent_put_data_) {
@@ -167,11 +167,11 @@ MaidAccount::serialised_type MaidAccount::Serialise() const {
 MaidAccount::serialised_info_type  MaidAccount::SerialiseAccountSyncInfo() const {
   protobuf::MaidAccount proto_maid_account;
   proto_maid_account.set_maid_name(kMaidName_->string());
-  for (auto& pmid_total : pmid_totals_) {
-    auto proto_pmid_totals(proto_maid_account.add_pmid_totals());
-    proto_pmid_totals->set_serialised_pmid_registration(
-        pmid_total.serialised_pmid_registration->string());
-    *(proto_pmid_totals->mutable_pmid_record()) = pmid_total.pmid_record.ToProtobuf();
+  for (auto& pmid_detail : pmid_details_) {
+    auto proto_pmid_details(proto_maid_account.add_pmid_details());
+    proto_pmid_details->set_serialised_pmid_registration(
+        pmid_detail.serialised_pmid_registration->string());
+    *(proto_pmid_details->mutable_pmid_record()) = pmid_detail.pmid_record.ToProtobuf();
   }
 
   for (auto& recent_put_data_item : recent_put_data_) {
@@ -200,36 +200,36 @@ std::pair<MaidAccount::AccountInfo,
   return std::make_pair(MaidAccount::AccountInfo(), std::vector<boost::filesystem::path>());
 }
 
-std::vector<PmidTotals>::iterator MaidAccount::Find(const PmidName& pmid_name) {
-  return std::find_if(pmid_totals_.begin(),
-                      pmid_totals_.end(),
-                      [&pmid_name](const PmidTotals& pmid_totals) {
-                        return pmid_name == pmid_totals.pmid_record.pmid_name;
+std::vector<PmidDetails>::iterator MaidAccount::Find(const PmidName& pmid_name) {
+  return std::find_if(pmid_details_.begin(),
+                      pmid_details_.end(),
+                      [&pmid_name](const PmidDetails& pmid_details) {
+                        return pmid_name == pmid_details.pmid_record.pmid_name;
                       });
 }
 
 void MaidAccount::RegisterPmid(
     const nfs::PmidRegistration& pmid_registration) {
   auto itr(Find(pmid_registration.pmid_name()));
-  if (itr == pmid_totals_.end()) {
+  if (itr == pmid_details_.end()) {
     nfs::PmidRegistration::serialised_type serialised_pmid_registration(
         pmid_registration.Serialise());
-    pmid_totals_.emplace_back(serialised_pmid_registration,
-                              PmidRecord(pmid_registration.pmid_name()));
+    pmid_details_.emplace_back(serialised_pmid_registration,
+                               PmidRecord(pmid_registration.pmid_name()));
   }
 }
 
 void MaidAccount::UnregisterPmid(const PmidName& pmid_name) {
   auto itr(Find(pmid_name));
-  if (itr != pmid_totals_.end())
-    pmid_totals_.erase(itr);
+  if (itr != pmid_details_.end())
+    pmid_details_.erase(itr);
 }
 
-void MaidAccount::UpdatePmidTotals(const PmidTotals& pmid_totals) {
-  auto itr(Find(pmid_totals.pmid_record.pmid_name));
-  if (itr == pmid_totals_.end())
+void MaidAccount::UpdatePmidTotals(const protobuf::PmidTotals& pmid_totals) {
+  auto itr(Find(PmidName(Identity(pmid_totals.pmid_name()))));
+  if (itr == pmid_details_.end())
     ThrowError(CommonErrors::no_such_element);
-  *itr = pmid_totals;
+  *(*itr).mutable_pmid_totals() = pmid_totals;
 }
 
 std::vector<fs::path> MaidAccount::GetArchiveFileNames() const {

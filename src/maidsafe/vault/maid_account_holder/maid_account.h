@@ -24,9 +24,10 @@
 
 #include "maidsafe/vault/disk_based_storage.h"
 #include "maidsafe/vault/parameters.h"
-#include "maidsafe/vault/pmid_account_holder/pmid_record.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/pmid_account_holder/pmid_totals_pb.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_pb.h"
 
 
 namespace maidsafe {
@@ -41,19 +42,6 @@ class MaidAccountHandlerTypedTest;
 
 }  // namespace test
 
-
-struct PmidTotals {
-  PmidTotals();
-  PmidTotals(const nfs::PmidRegistration::serialised_type& serialised_pmid_registration_in,
-             const PmidRecord& pmid_record_in);
-  PmidTotals(const PmidTotals& other);
-  PmidTotals& operator=(const PmidTotals& other);
-  PmidTotals(PmidTotals&& other);
-  PmidTotals& operator=(PmidTotals&& other);
-
-  nfs::PmidRegistration::serialised_type serialised_pmid_registration;
-  PmidRecord pmid_record;
-};
 
 class MaidAccount {
  public:
@@ -76,7 +64,7 @@ class MaidAccount {
 
   struct AccountInfo {
     GetTagValueAndIdentityVisitor type_and_name_visitor;
-    std::vector<PmidTotals> pmid_totals;
+    std::vector<protobuf::PmidDetails> pmid_details;
     std::deque<PutDataDetails> recent_put_data;
     int64_t total_claimed_available_size_by_pmids, total_put_data;
   };
@@ -91,7 +79,7 @@ class MaidAccount {
 
   void RegisterPmid(const nfs::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
-  void UpdatePmidTotals(const PmidTotals& pmid_totals);
+  void UpdatePmidTotals(const protobuf::PmidTotals& pmid_totals);
 
   std::vector<boost::filesystem::path> GetArchiveFileNames() const;
   NonEmptyString GetArchiveFile(const boost::filesystem::path& filename) const;
@@ -119,14 +107,14 @@ class MaidAccount {
   MaidAccount& operator=(const MaidAccount&);
   MaidAccount(MaidAccount&&);
   MaidAccount& operator=(MaidAccount&&);
-  std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
+  std::vector<protobuf::PmidDetails>::iterator Find(const PmidName& pmid_name);
 
   template<typename Data>
   Status DoPutData(const typename Data::name_type& name, int32_t cost);
 
   const name_type kMaidName_;
   GetTagValueAndIdentityVisitor type_and_name_visitor_;
-  std::vector<PmidTotals> pmid_totals_;
+  std::vector<protobuf::PmidDetails> pmid_details_;
   std::deque<PutDataDetails> recent_put_data_;
   int64_t total_claimed_available_size_by_pmids_, total_put_data_;
   DiskBasedStorage archive_;
