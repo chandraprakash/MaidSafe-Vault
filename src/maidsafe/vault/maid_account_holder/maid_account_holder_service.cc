@@ -115,13 +115,25 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
   try {
     Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
     switch (sync_action) {
-      case Sync::Action::kSyncInfo:
-        HandleReceivedSyncInfo(NonEmptyString(sync_message.sync_message()), source_id,
+      case Sync::Action::kPeriodicSyncInfo:
+        HandlePeriodicSyncInfo(NonEmptyString(sync_message.sync_message()), source_id,
                                reply_functor);
+        break;
+      case Sync::Action::kAccountTransfer:
+        HandleAccountTransfer(NonEmptyString(sync_message.sync_message()), source_id,
+                              reply_functor);
         break;
       case Sync::Action::kSyncArchiveFiles:
         HandleSyncArchiveFiles(NonEmptyString(sync_message.sync_message()), source_id,
                                reply_functor);
+        break;
+      case Sync::Action::kAccountLastState:
+        HandleAccountLastState(NonEmptyString(sync_message.sync_message()), source_id,
+                               reply_functor);
+        break;
+      case Sync::Action::kTriggerAccountTransfer:
+        HandleTriggerAccountTransfer(NonEmptyString(sync_message.sync_message()), source_id,
+                                     reply_functor);
         break;
       default:
         LOG(kError) << "Unhandled kSynchronise action type";
@@ -177,16 +189,47 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
 //   return WriteFile(kRootDir_ / maid_id.string(), maid_account.Serialise().string());
 // }
 
-
+// Only AccountLastState info sent to group
 void MaidAccountHolderService::TriggerSync() {
-  // Lock Accumulator
   auto account_names(maid_account_handler_.GetAccountNames());
   for (auto& account_name : account_names) {
-    SendSyncData(account_name);
+    SendAccountLastState(account_name);
   }
 }
 
-void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
+void MaidAccountHolderService::TriggerAccountTransfer(const MaidName& account_name) {
+//  // Lock Accumulator
+  SendSyncData(account_name, false);
+}
+
+void MaidAccountHolderService::TriggerPeriodicSync() {
+  // Lock Accumulator
+  auto account_names(maid_account_handler_.GetAccountNames());
+  for (auto& account_name : account_names) {
+    SendSyncData(account_name, true);
+  }
+}
+
+void MaidAccountHolderService::SendTriggerAccountTransferMessage(const MaidName& account_name) {
+  SendAccountLastState(account_name);
+
+}
+
+void MaidAccountHolderService::SendAccountLastState(const MaidName& account_name) {
+  protobuf::AccountLastState account_last_state;
+  account_last_state.set_maid_name(account_name->string());
+  // get state from the account - account_name Hash of last state
+  account_last_state.set_account_state(std::string("TODO"));
+  protobuf::Sync sync_pb_message;
+  sync_pb_message.set_action(static_cast<int32_t>(Sync::Action::kAccountLastState));
+  sync_pb_message.set_sync_message(account_last_state.SerializeAsString());
+  assert(sync_pb_message.IsInitialized() && "Uninitialised account last state message");
+  nfs_.PostSyncDataGroup(account_name,
+                         NonEmptyString(sync_pb_message.SerializeAsString()),
+                         [](std::string) {});
+}
+
+void MaidAccountHolderService::SendSyncData(const MaidName& account_name, bool periodic) {
   protobuf::SyncInfo sync_info;
   sync_info.set_maid_name(account_name->string());
   sync_info.set_maid_account(
@@ -197,7 +240,9 @@ void MaidAccountHolderService::SendSyncData(const MaidName& account_name) {
     sync_info.set_accumulator_entries(handled_requests->string());
   }
   protobuf::Sync sync_pb_message;
-  sync_pb_message.set_action(static_cast<int32_t>(Sync::Action::kSyncInfo));
+  sync_pb_message.set_action(
+      static_cast<int32_t>(periodic ? Sync::Action::kPeriodicSyncInfo :
+                                      Sync::Action::kAccountTransfer));
   sync_pb_message.set_sync_message(sync_info.SerializeAsString());
   assert(sync_pb_message.IsInitialized() && "Uninitialised sync message");
   std::shared_ptr<SharedResponse> shared_response(std::make_shared<SharedResponse>());
@@ -305,12 +350,18 @@ void MaidAccountHolderService::HandleFileRequestCallback(
   CheckAndDeleteAccount(account_name, shared_response);
 }
 
-void MaidAccountHolderService::HandleReceivedSyncInfo(
-    const NonEmptyString &/*serialised_sync_info*/,
+void MaidAccountHolderService::HandlePeriodicSyncInfo(
+    const NonEmptyString& /*serialised_periodic_sync_info*/,
     const NodeId& /*source_id*/,
-    const routing::ReplyFunctor &/*reply_functor*/) {
-// TODO (Prakash) call sync handler here
-  return;
+    const routing::ReplyFunctor& /*reply_functor*/) {
+
+}
+
+void MaidAccountHolderService::HandleAccountTransfer(
+    const NonEmptyString& /*serialised_account_transfer*/,
+    const NodeId& /*source_id*/,
+    const routing::ReplyFunctor& /*reply_functor*/) {
+
 }
 
 void MaidAccountHolderService::HandleSyncArchiveFiles(
@@ -318,6 +369,30 @@ void MaidAccountHolderService::HandleSyncArchiveFiles(
     const NodeId& /*source_id*/,
     const routing::ReplyFunctor& /*reply_functor*/) {
 // TODO (Prakash) call sync handler here
+}
+
+void MaidAccountHolderService::HandleAccountLastState(
+    const NonEmptyString& /*serialised_account_last_state*/,
+    const NodeId& /*source_id*/,
+    const routing::ReplyFunctor& /*reply_functor*/) {
+
+// Check if account in this node is outdated/unavailable
+// if (not in same state)
+// Send trigger account transfer message to the group with replication count 5
+  MaidName account_name;
+  SendTriggerAccountTransferMessage(account_name);
+// to allow updates from the node moving out of the network.
+
+// remember account name and responses from nodes to help in setting up the expectation from peers?
+}
+
+void MaidAccountHolderService::HandleTriggerAccountTransfer(
+    const NonEmptyString& /*serialised_trigger_account_transfer*/,
+    const NodeId& /*source_id*/,
+    const routing::ReplyFunctor& /*reply_functor*/) {
+  // Check if source_id is in furthest closest range.
+  MaidName account_name;
+  TriggerAccountTransfer(account_name);
 }
 
 }  // namespace vault

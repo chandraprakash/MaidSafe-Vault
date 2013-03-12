@@ -28,6 +28,7 @@
 
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/maid_account_holder/maid_account_handler.h"
+#include "maidsafe/vault/maid_account_holder/maid_account_sync_handler.h"
 #include "maidsafe/vault/sync_pb.h"
 #include "maidsafe/vault/types.h"
 
@@ -135,17 +136,27 @@ class MaidAccountHolderService {
 
   void HandleSyncMessage(const nfs::GenericMessage& generic_message,
                          const routing::ReplyFunctor& reply_functor);
-  void SendSyncData(const MaidName& account_name);
+  void SendSyncData(const MaidName& account_name, bool periodic);
+  void SendAccountLastState(const MaidName& account_name);
+  void SendTriggerAccountTransferMessage(const MaidName& account_name);
   void HandleSendSyncDataCallback(const std::string& response,
                                   const MaidName& account_name,
                                   std::shared_ptr<SharedResponse> shared_response);
-  void HandleReceivedSyncInfo(const NonEmptyString& serialised_account,
+  void HandlePeriodicSyncInfo(const NonEmptyString& serialised_periodic_sync_info,
                               const NodeId& source_id,
                               const routing::ReplyFunctor& reply_functor);
+  void HandleAccountTransfer(const NonEmptyString& serialised_account_transfer,
+                             const NodeId& source_id,
+                             const routing::ReplyFunctor& reply_functor);
   void HandleSyncArchiveFiles(const NonEmptyString& serialised_archive_files,
                               const NodeId& source_id,
                               const routing::ReplyFunctor& reply_functor);
-
+  void HandleAccountLastState(const NonEmptyString& serialised_account_last_state,
+                              const NodeId& source_id,
+                              const routing::ReplyFunctor& reply_functor);
+  void HandleTriggerAccountTransfer(const NonEmptyString& serialised_trigger_account_transfer,
+                                    const NodeId& source_id,
+                                    const routing::ReplyFunctor& reply_functor);
 //   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
 //   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
 //                     const passport::PublicPmid& p_pmid);
@@ -161,6 +172,8 @@ class MaidAccountHolderService {
                                  std::shared_ptr<SharedResponse> shared_response);
   void CheckAndDeleteAccount(const MaidName& account_name,
                              std::shared_ptr<SharedResponse> shared_response);
+  void TriggerPeriodicSync();
+  void TriggerAccountTransfer(const MaidName& account_name);
 
   routing::Routing& routing_;
   nfs::PublicKeyGetter& public_key_getter_;
