@@ -113,31 +113,9 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
     return;
   }
   try {
-    Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
-    switch (sync_action) {
-      case Sync::Action::kPeriodicSyncInfo:
-        HandlePeriodicSyncInfo(NonEmptyString(sync_message.sync_message()), source_id,
-                               reply_functor);
-        break;
-      case Sync::Action::kAccountTransfer:
-        HandleAccountTransfer(NonEmptyString(sync_message.sync_message()), source_id,
-                              reply_functor);
-        break;
-      case Sync::Action::kSyncArchiveFiles:
-        HandleSyncArchiveFiles(NonEmptyString(sync_message.sync_message()), source_id,
-                               reply_functor);
-        break;
-      case Sync::Action::kAccountLastState:
-        HandleAccountLastState(NonEmptyString(sync_message.sync_message()), source_id,
-                               reply_functor);
-        break;
-      case Sync::Action::kTriggerAccountTransfer:
-        HandleTriggerAccountTransfer(NonEmptyString(sync_message.sync_message()), source_id,
-                                     reply_functor);
-        break;
-      default:
-        LOG(kError) << "Unhandled kSynchronise action type";
-    }
+    static const Sync::Action sync_action(static_cast<Sync::Action>(sync_message.action()));
+    HandleSyncInfo<SyncAction<sync_action>::name_type>(
+        NonEmptyString(sync_message.sync_message()), source_id, reply_functor);
   } catch (const std::exception& ex) {
     LOG(kError) << "Caught exception on handling sync message: " << ex.what();
   }
@@ -350,28 +328,30 @@ void MaidAccountHolderService::HandleFileRequestCallback(
   CheckAndDeleteAccount(account_name, shared_response);
 }
 
-void MaidAccountHolderService::HandlePeriodicSyncInfo(
+template <>
+void MaidAccountHolderService::HandleSyncInfo<PeriodicSyncInfo>(
     const NonEmptyString& /*serialised_periodic_sync_info*/,
     const NodeId& /*source_id*/,
     const routing::ReplyFunctor& /*reply_functor*/) {
-
 }
 
-void MaidAccountHolderService::HandleAccountTransfer(
-    const NonEmptyString& /*serialised_account_transfer*/,
+template <>
+void MaidAccountHolderService::HandleSyncInfo<AccountTransfer>(
+    const NonEmptyString& /*serialised_periodic_sync_info*/,
     const NodeId& /*source_id*/,
     const routing::ReplyFunctor& /*reply_functor*/) {
-
 }
 
-void MaidAccountHolderService::HandleSyncArchiveFiles(
+template <>
+void MaidAccountHolderService::HandleSyncInfo<SyncArchiveFiles>(
     const NonEmptyString& /*serialised_archive_files*/,
     const NodeId& /*source_id*/,
     const routing::ReplyFunctor& /*reply_functor*/) {
 // TODO (Prakash) call sync handler here
 }
 
-void MaidAccountHolderService::HandleAccountLastState(
+template <>
+void MaidAccountHolderService::HandleSyncInfo<AccountLastState>(
     const NonEmptyString& serialised_account_last_state,
     const NodeId& /*source_id*/,
     const routing::ReplyFunctor& /*reply_functor*/) {
@@ -393,7 +373,8 @@ void MaidAccountHolderService::HandleAccountLastState(
 // remember account name and responses from nodes to help in setting up the expectation from peers?
 }
 
-void MaidAccountHolderService::HandleTriggerAccountTransfer(
+template <>
+void MaidAccountHolderService::HandleSyncInfo<TriggerAccountTransfer>(
     const NonEmptyString& /*serialised_trigger_account_transfer*/,
     const NodeId& /*source_id*/,
     const routing::ReplyFunctor& /*reply_functor*/) {

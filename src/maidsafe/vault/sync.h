@@ -30,6 +30,34 @@ class Sync {
   };
 };
 
+struct PeriodicSyncInfo {};
+struct SyncArchiveFiles {};
+struct AccountLastState {};
+struct TriggerAccountTransfer {};
+struct AccountTransfer {};
+
+template<Sync::Action T> struct SyncAction {};
+
+template<> struct SyncAction<Sync::Action::kPeriodicSyncInfo> {
+  typedef PeriodicSyncInfo name_type;
+};
+
+template<> struct SyncAction<Sync::Action::kSyncArchiveFiles> {
+  typedef SyncArchiveFiles name_type;
+};
+
+template<> struct SyncAction<Sync::Action::kAccountLastState> {
+  typedef AccountLastState name_type;
+};
+
+template<> struct SyncAction<Sync::Action::kTriggerAccountTransfer> {
+  typedef TriggerAccountTransfer name_type;
+};
+
+template<> struct SyncAction<Sync::Action::kAccountTransfer> {
+  typedef AccountTransfer name_type;
+};
+
 }  // namespace vault
 
 }  // namespace maidsafe
