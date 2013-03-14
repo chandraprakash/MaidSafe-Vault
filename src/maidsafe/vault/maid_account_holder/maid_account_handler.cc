@@ -112,6 +112,17 @@ void MaidAccountHandler::PutArchiveFile(const MaidName& account_name,
   (*itr)->PutArchiveFile(filename, content);
 }
 
+bool MaidAccountHandler::IsAccountUpToDate(const MaidName& account_name, const Identity& /*state*/) {
+// use xor to identify state
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(detail::FindAccount(maid_accounts_, account_name));
+  if (itr == maid_accounts_.end())
+    return false;
+
+  //  return (*itr)->IsAccountUpToDate(state);
+  return false;
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

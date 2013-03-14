@@ -58,6 +58,7 @@ class MaidAccountHandler {
   void PutArchiveFile(const MaidName& account_name,
                       const DiskBasedStorage::FileIdentity& filename,
                       const NonEmptyString& content);
+   bool IsAccountUpToDate(const MaidName& account_name, const Identity& state);
 
   typedef std::true_type RequireAccount;
   typedef std::false_type RequireNoAccount;

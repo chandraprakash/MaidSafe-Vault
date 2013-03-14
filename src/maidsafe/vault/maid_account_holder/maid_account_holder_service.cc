@@ -372,17 +372,24 @@ void MaidAccountHolderService::HandleSyncArchiveFiles(
 }
 
 void MaidAccountHolderService::HandleAccountLastState(
-    const NonEmptyString& /*serialised_account_last_state*/,
+    const NonEmptyString& serialised_account_last_state,
     const NodeId& /*source_id*/,
     const routing::ReplyFunctor& /*reply_functor*/) {
-
-// Check if account in this node is outdated/unavailable
-// if (not in same state)
-// Send trigger account transfer message to the group with replication count 5
+  protobuf::AccountLastState account_last_state;
+  if (!account_last_state.ParseFromString(serialised_account_last_state.string())) {
+    return;  // need reply ?
+  }
   MaidName account_name;
-  SendTriggerAccountTransferMessage(account_name);
-// to allow updates from the node moving out of the network.
+  try {
+    account_name = MaidName(Identity(account_last_state.maid_name()));
 
+  } catch (const std::exception& /*ex*/) {
+  }
+  if (!maid_account_handler_.IsAccountUpToDate(account_name, Identity())) {
+   // Send trigger account transfer message to the group with replication count 5
+   // to allow updates from the node moving out of the network.
+    SendTriggerAccountTransferMessage(account_name);
+  }
 // remember account name and responses from nodes to help in setting up the expectation from peers?
 }
 
