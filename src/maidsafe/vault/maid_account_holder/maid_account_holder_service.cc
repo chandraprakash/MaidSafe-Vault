@@ -113,9 +113,31 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
     return;
   }
   try {
-    static const Sync::Action sync_action(static_cast<Sync::Action>(sync_message.action()));
-    HandleSyncInfo<SyncAction<sync_action>::name_type>(
-        NonEmptyString(sync_message.sync_message()), source_id, reply_functor);
+    Sync::Action sync_action = static_cast<Sync::Action>(sync_message.action());
+     switch (sync_action) {
+       case Sync::Action::kPeriodicSyncInfo:
+         HandleSyncInfo<SyncAction<Sync::Action::kPeriodicSyncInfo>::name_type>(
+             NonEmptyString(sync_message.sync_message()), source_id, reply_functor);
+         break;
+       case Sync::Action::kAccountTransfer:
+         HandleSyncInfo<SyncAction<Sync::Action::kAccountTransfer>::name_type>(
+             NonEmptyString(sync_message.sync_message()), source_id, reply_functor);
+         break;
+       case Sync::Action::kSyncArchiveFiles:
+         HandleSyncInfo<SyncAction<Sync::Action::kSyncArchiveFiles>::name_type>(
+             NonEmptyString(sync_message.sync_message()), source_id, reply_functor);
+         break;
+       case Sync::Action::kAccountLastState:
+         HandleSyncInfo<SyncAction<Sync::Action::kAccountLastState>::name_type>(
+             NonEmptyString(sync_message.sync_message()), source_id, reply_functor);
+         break;
+       case Sync::Action::kTriggerAccountTransfer:
+         HandleSyncInfo<SyncAction<Sync::Action::kTriggerAccountTransfer>::name_type>(
+             NonEmptyString(sync_message.sync_message()), source_id, reply_functor);
+         break;
+       default:
+         LOG(kError) << "Unhandled kSynchronise action type";
+     }
   } catch (const std::exception& ex) {
     LOG(kError) << "Caught exception on handling sync message: " << ex.what();
   }

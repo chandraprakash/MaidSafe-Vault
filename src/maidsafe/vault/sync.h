@@ -21,12 +21,12 @@ namespace vault {
 
 class Sync {
  public:
-  enum class Action : int32_t {
-    kPeriodicSyncInfo,
-    kSyncArchiveFiles,
-    kAccountLastState,
-    kTriggerAccountTransfer,
-    kAccountTransfer
+  enum class Action  {
+    kPeriodicSyncInfo = 0,
+    kSyncArchiveFiles = 1,
+    kAccountLastState = 2,
+    kTriggerAccountTransfer = 3,
+    kAccountTransfer = 4
   };
 };
 
