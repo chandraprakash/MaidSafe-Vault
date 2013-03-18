@@ -234,6 +234,35 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
   }
 }
 
+template <>
+void MaidAccountHolderService::HandleSyncInfo<PeriodicSyncInfo>(
+    const NonEmptyString& /*serialised_periodic_sync_info*/,
+    const NodeId& /*source_id*/,
+    const routing::ReplyFunctor& /*reply_functor*/);
+template <>
+void MaidAccountHolderService::HandleSyncInfo<AccountTransfer>(
+    const NonEmptyString& /*serialised_periodic_sync_info*/,
+    const NodeId& /*source_id*/,
+    const routing::ReplyFunctor& /*reply_functor*/);
+
+template <>
+void MaidAccountHolderService::HandleSyncInfo<SyncArchiveFiles>(
+    const NonEmptyString& /*serialised_archive_files*/,
+    const NodeId& /*source_id*/,
+    const routing::ReplyFunctor& /*reply_functor*/);
+
+template <>
+void MaidAccountHolderService::HandleSyncInfo<AccountLastState>(
+    const NonEmptyString& serialised_account_last_state,
+    const NodeId& /*source_id*/,
+    const routing::ReplyFunctor& /*reply_functor*/);
+
+template <>
+void MaidAccountHolderService::HandleSyncInfo<TriggerAccountTransfer>(
+    const NonEmptyString& /*serialised_trigger_account_transfer*/,
+    const NodeId& /*source_id*/,
+    const routing::ReplyFunctor& /*reply_functor*/);
+
 }  // namespace vault
 
 }  // namespace maidsafe
