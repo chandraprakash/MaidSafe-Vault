@@ -211,8 +211,15 @@ void MaidAccountHolderService::TriggerPeriodicSync() {
 }
 
 void MaidAccountHolderService::SendTriggerAccountTransferMessage(const MaidName& account_name) {
-  SendAccountLastState(account_name);
-
+  protobuf::TriggerAccountTransfer trigger_account_transfer;
+  trigger_account_transfer.set_maid_name(account_name->string());
+  protobuf::Sync sync_pb_message;
+  sync_pb_message.set_action(static_cast<int32_t>(Sync::Action::kTriggerAccountTransfer));
+  sync_pb_message.set_sync_message(trigger_account_transfer.SerializeAsString());
+  assert(sync_pb_message.IsInitialized() && "Uninitialised trigger_account_transfer message");
+  nfs_.PostSyncDataGroup(account_name, // to send with replication count of 5
+                         NonEmptyString(sync_pb_message.SerializeAsString()),
+                         [](std::string) {});
 }
 
 void MaidAccountHolderService::SendAccountLastState(const MaidName& account_name) {
@@ -358,9 +365,13 @@ void MaidAccountHolderService::HandlePeriodicSyncInfo(
 }
 
 void MaidAccountHolderService::HandleAccountTransfer(
-    const NonEmptyString& /*serialised_account_transfer*/,
+    const NonEmptyString& serialised_account_transfer,
     const NodeId& /*source_id*/,
     const routing::ReplyFunctor& /*reply_functor*/) {
+  protobuf::SyncInfo sync_info;
+  if (!sync_info.ParseFromString(serialised_account_transfer.string())) {
+    return;  // ignore reply
+  }
 
 }
 
@@ -374,32 +385,47 @@ void MaidAccountHolderService::HandleSyncArchiveFiles(
 void MaidAccountHolderService::HandleAccountLastState(
     const NonEmptyString& serialised_account_last_state,
     const NodeId& /*source_id*/,
-    const routing::ReplyFunctor& /*reply_functor*/) {
+    const routing::ReplyFunctor& reply_functor) {
   protobuf::AccountLastState account_last_state;
   if (!account_last_state.ParseFromString(serialised_account_last_state.string())) {
-    return;  // need reply ?
+    return;  // ignore reply
   }
   MaidName account_name;
   try {
     account_name = MaidName(Identity(account_last_state.maid_name()));
-
   } catch (const std::exception& /*ex*/) {
+    return;  // ignore reply
   }
   if (!maid_account_handler_.IsAccountUpToDate(account_name, Identity())) {
    // Send trigger account transfer message to the group with replication count 5
    // to allow updates from the node moving out of the network.
     SendTriggerAccountTransferMessage(account_name);
+    reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
   }
 // remember account name and responses from nodes to help in setting up the expectation from peers?
 }
 
 void MaidAccountHolderService::HandleTriggerAccountTransfer(
-    const NonEmptyString& /*serialised_trigger_account_transfer*/,
+    const NonEmptyString& serialised_trigger_account_transfer,
     const NodeId& /*source_id*/,
-    const routing::ReplyFunctor& /*reply_functor*/) {
+    const routing::ReplyFunctor& reply_functor) {
   // Check if source_id is in furthest closest range.
+  protobuf::TriggerAccountTransfer trigger_account_transfer;
+  if (!trigger_account_transfer.ParseFromString(serialised_trigger_account_transfer.string())) {
+    return;  // ignore reply
+  }
   MaidName account_name;
+  try {
+    account_name = MaidName(Identity(trigger_account_transfer.maid_name()));
+  } catch (const std::exception& /*ex*/) {
+    return;  // ignore reply
+  }
+
+  if (!routing_.EstimateInGroup(source_id, NodeId(account_name->string())))
+    return;  // ignore reply
+
   TriggerAccountTransfer(account_name);
+  reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
 }
 
 }  // namespace vault
