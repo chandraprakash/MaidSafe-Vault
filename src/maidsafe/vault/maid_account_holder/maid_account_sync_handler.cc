@@ -15,7 +15,7 @@
 
 #include "maidsafe/common/error.h"
 
-#include "maidsafe/vault/sync_pb.h"
+#include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/utils.h"
 
 
