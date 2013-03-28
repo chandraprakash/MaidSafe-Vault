@@ -24,16 +24,12 @@ class Sync {
   enum class Action  {
     kPeriodicSyncInfo = 0,
     kSyncArchiveFiles = 1,
-    kAccountLastState = 2,
-    kTriggerAccountTransfer = 3,
-    kAccountTransfer = 4
+    kAccountTransfer = 2
   };
 };
 
 struct PeriodicSyncInfo {};
 struct SyncArchiveFiles {};
-struct AccountLastState {};
-struct TriggerAccountTransfer {};
 struct AccountTransfer {};
 
 template<Sync::Action T> struct SyncAction {};
@@ -44,14 +40,6 @@ template<> struct SyncAction<Sync::Action::kPeriodicSyncInfo> {
 
 template<> struct SyncAction<Sync::Action::kSyncArchiveFiles> {
   typedef SyncArchiveFiles name_type;
-};
-
-template<> struct SyncAction<Sync::Action::kAccountLastState> {
-  typedef AccountLastState name_type;
-};
-
-template<> struct SyncAction<Sync::Action::kTriggerAccountTransfer> {
-  typedef TriggerAccountTransfer name_type;
 };
 
 template<> struct SyncAction<Sync::Action::kAccountTransfer> {

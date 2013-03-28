@@ -127,14 +127,6 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
          HandleSyncInfo<SyncAction<Sync::Action::kSyncArchiveFiles>::name_type>(
              NonEmptyString(sync_message.sync_message()), source_id, reply_functor);
          break;
-       case Sync::Action::kAccountLastState:
-         HandleSyncInfo<SyncAction<Sync::Action::kAccountLastState>::name_type>(
-             NonEmptyString(sync_message.sync_message()), source_id, reply_functor);
-         break;
-       case Sync::Action::kTriggerAccountTransfer:
-         HandleSyncInfo<SyncAction<Sync::Action::kTriggerAccountTransfer>::name_type>(
-             NonEmptyString(sync_message.sync_message()), source_id, reply_functor);
-         break;
        default:
          LOG(kError) << "Unhandled kSynchronise action type";
      }
