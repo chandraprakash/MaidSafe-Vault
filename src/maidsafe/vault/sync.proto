@@ -1,5 +1,4 @@
 package maidsafe.vault.protobuf;
-import "maidsafe/vault/maid_account_holder/maid_account.proto";
 option optimize_for = LITE_RUNTIME;
 
 message Sync {
@@ -8,42 +7,40 @@ message Sync {
 }
 
 message ArchiveFile {
-  required FileId file_id = 1;
+  required bytes file_id = 1;
   required bytes contents = 2;
 }
 
 message GetArchiveFiles {
-  repeated FileId file_id = 1;
+  repeated bytes file_ids = 1;
 }
 
 message PeriodicSync {
   required bytes maid_name = 1;
-  repeated bytes recent_ops = 2;
-  optional bool new_node = 3;
+  required uint64 confirmed_state_id = 2;
+  repeated bytes recent_ops = 3;
 }
 
-message SyncInfoResponse {
+message PeriodicSyncResponse {
   required bytes node_id = 1;
-  optional GetArchiveFiles file_hash_requests = 2;
 }
 
 message AccountTransfer {
   required bytes maid_name = 1;
   repeated bytes recent_ops = 2;
-  required bytes account_state = 3;
-  repeated FileId file_id = 4;
+  required bytes confirmed_state = 3;
+  repeated bytes file_ids = 4;
 }
 
 message AccountTransferResponse {
-  required bytes node_id = 1;
   optional GetArchiveFiles file_hash_requests = 2;
 }
 
-message SyncArchiveFiles {
+message ArchiveFiles {
   required bytes maid_name = 1;
   repeated ArchiveFile files = 2;
 }
 
-message SyncArchiveFilesResponse {
+message ArchiveFilesResponse {
   optional GetArchiveFiles file_hash_requests = 1;
 }

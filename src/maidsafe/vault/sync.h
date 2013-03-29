@@ -22,24 +22,24 @@ namespace vault {
 class Sync {
  public:
   enum class Action  {
-    kPeriodicSyncInfo = 0,
-    kSyncArchiveFiles = 1,
+    kPeriodicSync = 0,
+    kArchiveFiles = 1,
     kAccountTransfer = 2
   };
 };
 
-struct PeriodicSyncInfo {};
-struct SyncArchiveFiles {};
+struct PeriodicSync {};
+struct ArchiveFiles {};
 struct AccountTransfer {};
 
 template<Sync::Action T> struct SyncAction {};
 
-template<> struct SyncAction<Sync::Action::kPeriodicSyncInfo> {
-  typedef PeriodicSyncInfo name_type;
+template<> struct SyncAction<Sync::Action::kPeriodicSync> {
+  typedef PeriodicSync name_type;
 };
 
-template<> struct SyncAction<Sync::Action::kSyncArchiveFiles> {
-  typedef SyncArchiveFiles name_type;
+template<> struct SyncAction<Sync::Action::kArchiveFiles> {
+  typedef ArchiveFiles name_type;
 };
 
 template<> struct SyncAction<Sync::Action::kAccountTransfer> {

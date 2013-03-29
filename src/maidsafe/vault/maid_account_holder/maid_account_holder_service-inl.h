@@ -235,7 +235,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
 }
 
 template <>
-void MaidAccountHolderService::HandleSyncInfo<PeriodicSyncInfo>(
+void MaidAccountHolderService::HandleSyncInfo<PeriodicSync>(
     const NonEmptyString& /*serialised_periodic_sync_info*/,
     const NodeId& /*source_id*/,
     const routing::ReplyFunctor& /*reply_functor*/);
@@ -246,20 +246,8 @@ void MaidAccountHolderService::HandleSyncInfo<AccountTransfer>(
     const routing::ReplyFunctor& /*reply_functor*/);
 
 template <>
-void MaidAccountHolderService::HandleSyncInfo<SyncArchiveFiles>(
+void MaidAccountHolderService::HandleSyncInfo<ArchiveFiles>(
     const NonEmptyString& /*serialised_archive_files*/,
-    const NodeId& /*source_id*/,
-    const routing::ReplyFunctor& /*reply_functor*/);
-
-template <>
-void MaidAccountHolderService::HandleSyncInfo<AccountLastState>(
-    const NonEmptyString& serialised_account_last_state,
-    const NodeId& /*source_id*/,
-    const routing::ReplyFunctor& /*reply_functor*/);
-
-template <>
-void MaidAccountHolderService::HandleSyncInfo<TriggerAccountTransfer>(
-    const NonEmptyString& /*serialised_trigger_account_transfer*/,
     const NodeId& /*source_id*/,
     const routing::ReplyFunctor& /*reply_functor*/);
 
