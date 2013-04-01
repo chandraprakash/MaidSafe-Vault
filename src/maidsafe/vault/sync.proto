@@ -17,7 +17,7 @@ message GetArchiveFiles {
 
 message PeriodicSync {
   required bytes maid_name = 1;
-  required uint64 confirmed_state_id = 2;
+  required bytes current_state = 2;
   repeated bytes recent_ops = 3;
 }
 
@@ -28,8 +28,9 @@ message PeriodicSyncResponse {
 message AccountTransfer {
   required bytes maid_name = 1;
   repeated bytes recent_ops = 2;
-  required bytes confirmed_state = 3;
-  repeated bytes file_ids = 4;
+  required bytes current_state = 3;
+  required bytes confirmed_state = 4;
+  repeated bytes file_ids = 5;
 }
 
 message AccountTransferResponse {

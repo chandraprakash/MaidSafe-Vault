@@ -181,147 +181,161 @@ void MaidAccountHolderService::HandleSyncMessage(const nfs::GenericMessage& gene
 //   return WriteFile(kRootDir_ / maid_id.string(), maid_account.Serialise().string());
 // }
 
-// Only AccountLastState info sent to group
-//void MaidAccountHolderService::TriggerSync() {
-//  auto account_names(maid_account_handler_.GetAccountNames());
-//  for (auto& account_name : account_names) {
-//    SendAccountLastState(account_name);
-//  }
-//}
-
-//void MaidAccountHolderService::TriggerAccountTransfer(const MaidName& account_name) {
-////  // Lock Accumulator
-//  SendSyncData(account_name, false);
-//}
+void MaidAccountHolderService::TriggerSync() {
+// Notification from routing. Need signature change
+// Check all accounts which needs to be transfered and deleted
+// If any account need transfer - Do periodic sync for that account followed by account transfer
+}
 
 void MaidAccountHolderService::TriggerPeriodicSync() {
-  // Lock Accumulator
+  // TODO(Prakash): pick up selected accounts (if new node appears/drops for given accounts)
   auto account_names(maid_account_handler_.GetAccountNames());
   for (auto& account_name : account_names) {
-    SendSyncData(account_name, true);
+    SendPeriodicSync(account_name);
   }
 }
 
-//void MaidAccountHolderService::SendSyncData(const MaidName& account_name, bool periodic) {
-//  protobuf::SyncInfo sync_info;
-//  sync_info.set_maid_name(account_name->string());
-//  sync_info.set_maid_account(
-//      maid_account_handler_.GetSerialisedAccountSyncInfo(account_name)->string());
-//  {
-//    std::lock_guard<std::mutex> lock(accumulator_mutex_);
-//    auto handled_requests(accumulator_.Serialise(account_name));
-//    sync_info.set_accumulator_entries(handled_requests->string());
-//  }
-//  protobuf::Sync sync_pb_message;
-//  sync_pb_message.set_action(
-//      static_cast<int32_t>(periodic ? Sync::Action::kPeriodicSync :
-//                                      Sync::Action::kAccountTransfer));
-//  sync_pb_message.set_sync_message(sync_info.SerializeAsString());
-//  assert(sync_pb_message.IsInitialized() && "Uninitialised sync message");
-//  std::shared_ptr<SharedResponse> shared_response(std::make_shared<SharedResponse>());
-//  auto callback = [=](std::string response) {
-//      this->HandleSendSyncDataCallback(response, account_name, shared_response);
-//    };
-//  nfs_.PostSyncDataGroup(account_name,
-//                         NonEmptyString(sync_pb_message.SerializeAsString()),
-//                         callback);
-//}
+void MaidAccountHolderService::SendPeriodicSync(const MaidName& account_name) {
+  protobuf::PeriodicSync periodic_sync;
+  periodic_sync.set_maid_name(account_name->string());
+  periodic_sync.set_current_state(""); // FIXME
+  periodic_sync.add_recent_ops(""); // FIXME
 
-//void MaidAccountHolderService::HandleSendSyncDataCallback(
-//    const std::string &response,
-//    const MaidName& account_name,
-//    std::shared_ptr<SharedResponse> shared_response) {
-//  try {
-//    protobuf::SyncInfoResponse sync_info_response;
-//    nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(response))));
-//    if (!reply.IsSuccess() || !sync_info_response.ParseFromString(reply.data().string())) {
-//      LOG(kError) << "Failed to parse reply";
-//      return;
-//    }
-//    NodeId requester_node_id(sync_info_response.node_id());
-//    bool has_file_requests(sync_info_response.has_file_hash_requests());
-//    {
-//      std::lock_guard<std::mutex> lock(shared_response->mutex);
-//      if (requester_node_id == routing_.kNodeId())
-//        shared_response->this_node_in_group = true;
-//      if (!has_file_requests)
-//        ++shared_response->count;  //  Done with this node
-//    }
-//    if (has_file_requests) {
-//      HandleFileRequest(requester_node_id, account_name, sync_info_response.file_hash_requests(),
-//                        shared_response);
-//    }
-//    CheckAndDeleteAccount(account_name, shared_response);
-//  } catch(const std::exception& ex) {
-//    LOG(kError) << "Exception thrown while processing reply : " << ex.what();
-//  }
-//}
+  protobuf::Sync sync_pb;
+  sync_pb.set_action(static_cast<int32_t>(Sync::Action::kPeriodicSync));
+  sync_pb.set_sync_message(periodic_sync.SerializeAsString());
+  assert(sync_pb.IsInitialized() && "Uninitialised sync message");
+  std::shared_ptr<SharedResponse> shared_response(std::make_shared<SharedResponse>());
+  auto callback = [=](std::string response) {
+      this->HandleSendPeriodicSyncCallback(response, account_name, shared_response);
+      };
+  nfs_.PostSyncDataGroup(account_name, NonEmptyString(sync_pb.SerializeAsString()), callback);
+}
 
-//void MaidAccountHolderService::CheckAndDeleteAccount(
-//    const MaidName& account_name,
-//    std::shared_ptr<SharedResponse> shared_response) {
-//  std::lock_guard<std::mutex> lock(shared_response->mutex);
-//  if ((shared_response->count == 4) && !shared_response->this_node_in_group) {
-//    LOG(kInfo) << "Deleting account after forwarding sync info";
-//    maid_account_handler_.DeleteAccount(account_name);  // FIXME this need archiving account ?
-//  }
-//}
+void MaidAccountHolderService::HandleSendPeriodicSyncCallback(
+    const std::string &response,
+    const MaidName& account_name,
+    std::shared_ptr<SharedResponse> shared_response) {
+  try {
+    protobuf::PeriodicSyncResponse periodic_sync_response;
+    nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(response))));
+    if (!reply.IsSuccess() || !periodic_sync_response.ParseFromString(reply.data().string())) {
+      LOG(kError) << "Failed to parse reply";
+      return;
+    }
+    NodeId peer_node_id(periodic_sync_response.node_id());
+    {
+      std::lock_guard<std::mutex> lock(shared_response->mutex);
+      if (peer_node_id == routing_.kNodeId())
+        shared_response->this_node_in_group = true;
+      ++shared_response->count;  //  Done with this node
+    }
+    CheckAndDeleteAccount(account_name, shared_response);
+  } catch(const std::exception& ex) {
+    LOG(kError) << "Exception thrown while processing reply : " << ex.what();
+  }
+}
 
-//void MaidAccountHolderService::HandleFileRequest(const NodeId& requester_node_id,
-//                                                 const MaidName& account_name,
-//                                                 const protobuf::GetArchiveFiles& requested_files,
-//                                                 std::shared_ptr<SharedResponse> shared_response) {
-//  assert(requested_files.IsInitialized());
-//  for (auto& file_id : requested_files.file_id()) {
-//    try {
+void MaidAccountHolderService::CheckAndDeleteAccount(
+    const MaidName& account_name,
+    std::shared_ptr<SharedResponse> shared_response) {
+  std::lock_guard<std::mutex> lock(shared_response->mutex);
+  if ((shared_response->count >= 4) && !shared_response->this_node_in_group) {
+    LOG(kInfo) << "Deleting/Archiving account after forwarding sync info : "
+               << HexSubstr(account_name->string());
+    maid_account_handler_.DeleteAccount(account_name);  // FIXME this need archiving account ?
+  }
+}
+
+void MaidAccountHolderService::SendAccountTransfer(const NodeId& target_node_id,
+                                                   const MaidName& account_name) {
+  protobuf::AccountTransfer account_tansfer;
+  account_tansfer.set_maid_name(account_name->string());
+  account_tansfer.add_recent_ops(" ");  // FIXME
+  account_tansfer.set_current_state("");  // FIXME
+  account_tansfer.set_confirmed_state("");  // FIXME
+  account_tansfer.add_file_ids(" ");  // FIXME
+
+  protobuf::Sync sync_pb;
+  sync_pb.set_action(static_cast<int32_t>(Sync::Action::kAccountTransfer));
+  sync_pb.set_sync_message(account_tansfer.SerializeAsString());
+  assert(sync_pb.IsInitialized() && "Uninitialised sync message");
+  auto callback = [=](std::string response) {
+      this->HandleSendAccountTransferCallback(target_node_id, response, account_name);
+    };
+  nfs_.PostSyncDataDirect(target_node_id, NonEmptyString(sync_pb.SerializeAsString()), callback);
+}
+
+void MaidAccountHolderService::HandleSendAccountTransferCallback(
+    const NodeId& target_node_id,
+    const std::string &response,
+    const MaidName& account_name) {
+  try {
+    protobuf::AccountTransferResponse account_transfer_response;
+    nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(response))));
+    if (!reply.IsSuccess() || !account_transfer_response.ParseFromString(reply.data().string())) {
+      LOG(kError) << "Failed to parse reply";
+      return;
+    }
+    if (account_transfer_response.has_file_hash_requests()) {
+      HandleFileRequest(target_node_id, account_name,
+                        account_transfer_response.file_hash_requests());
+    }
+  } catch(const std::exception& ex) {
+    LOG(kError) << "Exception thrown while processing reply : " << ex.what();
+  }
+}
+
+void MaidAccountHolderService::HandleFileRequest(const NodeId& requester_node_id,
+                                                 const MaidName& account_name,
+                                                 const protobuf::GetArchiveFiles& requested_files) {
+  assert(requested_files.IsInitialized());
+//  for (auto& file_id : requested_files.file_ids()) {  // FIXME
+    try {
 //      auto file_contents = maid_account_handler_.GetArchiveFile(account_name,
 //          DiskBasedStorage::FileIdentity(std::make_pair(file_id.index(), file_id.hash())));
-//      protobuf::ArchiveFile maid_account_file;
+      protobuf::ArchiveFile maid_account_file;
 //      auto proto_file_id(maid_account_file.mutable_file_id());
 //      proto_file_id->set_index(file_id.index());
 //      proto_file_id->set_hash(file_id.hash());
 //      maid_account_file.set_contents(file_contents.string());
-//      assert(maid_account_file.IsInitialized() && "Uninitialised maid_account_file");
-//      protobuf::Sync sync_message;
-//      sync_message.set_action(static_cast<int32_t>(Sync::Action::kSyncArchiveFiles));
-//      sync_message.set_sync_message(maid_account_file.SerializeAsString());
-//      assert(sync_message.IsInitialized() && "Uninitialised sync message");
-//      auto callback = [=](std::string response) {
-//          this->HandleFileRequestCallback(requester_node_id, response, account_name,
-//                                          shared_response);
-//        };
-//      nfs_.PostSyncDataDirect(requester_node_id, NonEmptyString(sync_message.SerializeAsString()),
-//                              callback);
-//    } catch(const std::exception& ex) {
-//      LOG(kError) << "Failed to send requested file contents : " << ex.what();
-//    }
+      assert(maid_account_file.IsInitialized() && "Uninitialised maid_account_file");
+      protobuf::Sync sync_message;
+      sync_message.set_action(static_cast<int32_t>(Sync::Action::kArchiveFiles));
+      sync_message.set_sync_message(maid_account_file.SerializeAsString());
+      assert(sync_message.IsInitialized() && "Uninitialised sync message");
+      auto callback = [=](std::string response) {
+          this->HandleFileRequestCallback(requester_node_id, response, account_name);
+        };
+      nfs_.PostSyncDataDirect(requester_node_id, NonEmptyString(sync_message.SerializeAsString()),
+                              callback);
+    } catch(const std::exception& ex) {
+      LOG(kError) << "Failed to send requested file contents : " << ex.what();
+    }
 //  }
-//}
+}
 
-//void MaidAccountHolderService::HandleFileRequestCallback(
-//    const NodeId& requester_node_id,
-//    const std::string& response,
-//    const MaidName& account_name,
-//    std::shared_ptr<SharedResponse> shared_response) {
-//  try {
-//    nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(response))));
-//    protobuf::SyncArchiveFilesResponse archive_file_response;
-//    if (!reply.IsSuccess() || !archive_file_response.ParseFromString(reply.data().string())) {
-//      LOG(kError) << "Failed to parse reply";
-//      return;
-//    }
-//    if (!archive_file_response.has_file_hash_requests()) {
-//      std::lock_guard<std::mutex> lock(shared_response->mutex);
-//      ++shared_response->count;  //  Done with this node
-//    } else {
-//      HandleFileRequest(requester_node_id, account_name, archive_file_response.file_hash_requests(),
-//                        shared_response);
-//    }
-//  } catch(const std::exception& ex) {
-//    LOG(kError) << "Exception thrown while processing reply : " << ex.what();
-//  }
-//  CheckAndDeleteAccount(account_name, shared_response);
-//}
+void MaidAccountHolderService::HandleFileRequestCallback(
+    const NodeId& requester_node_id,
+    const std::string& response,
+    const MaidName& account_name) {
+  try {
+    nfs::Reply reply((nfs::Reply::serialised_type(NonEmptyString(response))));
+    protobuf::ArchiveFilesResponse archive_file_response;
+    if (!reply.IsSuccess() || !archive_file_response.ParseFromString(reply.data().string())) {
+      LOG(kError) << "Failed to parse reply";
+      return;
+    }
+    if (archive_file_response.has_file_hash_requests()) {
+      HandleFileRequest(requester_node_id, account_name,
+                        archive_file_response.file_hash_requests());
+    }
+  } catch(const std::exception& ex) {
+    LOG(kError) << "Exception thrown while processing reply : " << ex.what();
+  }
+}
+
+
 
 template <>
 void MaidAccountHolderService::HandleSyncInfo<PeriodicSync>(
@@ -348,30 +362,6 @@ void MaidAccountHolderService::HandleSyncInfo<ArchiveFiles>(
     const routing::ReplyFunctor& /*reply_functor*/) {
 // TODO (Prakash) call sync handler here
 }
-
-//template <>
-//void MaidAccountHolderService::HandleSyncInfo<TriggerAccountTransfer>(
-//    const NonEmptyString& serialised_trigger_account_transfer,
-//    const NodeId& source_id,
-//    const routing::ReplyFunctor& reply_functor) {
-//  // Check if source_id is in furthest closest range.
-//  protobuf::TriggerAccountTransfer trigger_account_transfer;
-//  if (!trigger_account_transfer.ParseFromString(serialised_trigger_account_transfer.string())) {
-//    return;  // ignore reply
-//  }
-//  MaidName account_name;
-//  try {
-//    account_name = MaidName(Identity(trigger_account_transfer.maid_name()));
-//  } catch (const std::exception& /*ex*/) {
-//    return;  // ignore reply
-//  }
-
-//  if (!routing_.EstimateInGroup(source_id, NodeId(account_name->string())))
-//    return;  // ignore reply
-
-//  TriggerAccountTransfer(account_name);
-//  reply_functor(nfs::Reply(CommonErrors::success).Serialise()->string());
-//}
 
 }  // namespace vault
 

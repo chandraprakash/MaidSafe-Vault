@@ -136,31 +136,16 @@ class MaidAccountHolderService {
 
   void HandleSyncMessage(const nfs::GenericMessage& generic_message,
                          const routing::ReplyFunctor& reply_functor);
-  void SendSyncData(const MaidName& account_name, bool periodic);
-  void SendAccountLastState(const MaidName& account_name);
-  void SendTriggerAccountTransferMessage(const MaidName& account_name);
-  void HandleSendSyncDataCallback(const std::string& response,
-                                  const MaidName& account_name,
-                                  std::shared_ptr<SharedResponse> shared_response);
+  void SendPeriodicSync(const MaidName& account_name);
+  void HandleSendPeriodicSyncCallback(const std::string &response, const MaidName& account_name,
+                                      std::shared_ptr<SharedResponse> shared_response);
+  void SendAccountTransfer(const NodeId& target_node_id, const MaidName& account_name);
+  void HandleSendAccountTransferCallback(const NodeId& target_node_id, const std::string &response,
+                                         const MaidName& account_name);
   template <typename T>
   void HandleSyncInfo(const NonEmptyString& serialised_sync_info,
                       const NodeId& source_id,
                       const routing::ReplyFunctor& reply_functor);
-//  void HandlePeriodicSyncInfo(const NonEmptyString& serialised_periodic_sync_info,
-//                              const NodeId& source_id,
-//                              const routing::ReplyFunctor& reply_functor);
-//  void HandleAccountTransfer(const NonEmptyString& serialised_account_transfer,
-//                             const NodeId& source_id,
-//                             const routing::ReplyFunctor& reply_functor);
-//  void HandleSyncArchiveFiles(const NonEmptyString& serialised_archive_files,
-//                              const NodeId& source_id,
-//                              const routing::ReplyFunctor& reply_functor);
-//  void HandleAccountLastState(const NonEmptyString& serialised_account_last_state,
-//                              const NodeId& source_id,
-//                              const routing::ReplyFunctor& reply_functor);
-//  void HandleTriggerAccountTransfer(const NonEmptyString& serialised_trigger_account_transfer,
-//                                    const NodeId& source_id,
-//                                    const routing::ReplyFunctor& reply_functor);
 //   bool HandleNewComer(const passport::/*PublicMaid*/PublicPmid& p_maid);
 //   bool OnKeyFetched(const passport::/*PublicMaid*/PublicPmid& p_maid,
 //                     const passport::PublicPmid& p_pmid);
@@ -168,12 +153,10 @@ class MaidAccountHolderService {
 //  void OnGenericErrorHandler(nfs::GenericMessage generic_message);
   void HandleFileRequest(const NodeId& requester_node_id,
                          const MaidName& account_name,
-                         const protobuf::GetArchiveFiles& requested_files,
-                         std::shared_ptr<SharedResponse> shared_response);
+                         const protobuf::GetArchiveFiles& requested_files);
   void HandleFileRequestCallback(const NodeId& requester_node_id,
                                  const std::string& response,
-                                 const MaidName& account_name,
-                                 std::shared_ptr<SharedResponse> shared_response);
+                                 const MaidName& account_name);
   void CheckAndDeleteAccount(const MaidName& account_name,
                              std::shared_ptr<SharedResponse> shared_response);
   void TriggerPeriodicSync();
