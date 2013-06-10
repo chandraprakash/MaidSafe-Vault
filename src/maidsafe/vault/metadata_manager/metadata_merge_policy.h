@@ -31,7 +31,7 @@ namespace maidsafe {
 namespace vault {
 
 typedef UnresolvedElement<MetadataManager> MetadataUnresolvedEntry;
-typedef MetadataUnresolvedEntry MetadataResolvedEntry;
+typedef void MetadataResolvedEntry;
 
 class MetadataMergePolicy {
  public:

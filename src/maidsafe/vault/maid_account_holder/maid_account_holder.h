@@ -17,6 +17,7 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/vault/db_key.h"
 
 
 namespace maidsafe {
@@ -25,10 +26,7 @@ namespace nfs {
 
 template<>
 struct PersonaTypes<Persona::kMaidAccountHolder> {
-  typedef DataNameVariant DbKey;
-  typedef int32_t DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  typedef DbValue UnresolvedEntryValue;
+  typedef vault::DbKey DbKey;
   static const Persona persona = Persona::kMaidAccountHolder;
 };
 

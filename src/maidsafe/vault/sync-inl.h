@@ -214,6 +214,7 @@ std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresol
     }
     auto found(detail::FindInMessages<MergePolicy>(*itr, this_node_id_));
     if (found != std::end(itr->messages_contents)) {
+      assert(itr->key.second != nfs::MessageAction::kAccountTransfer);
       // Always move the found message (i.e. this node's message) to the front of the vector.  This
       // serves as an indicator that the entry has not been synchronised by this node to the peers
       // if its message is not the first in the vector.  (It's also slightly more efficient to find
@@ -221,7 +222,6 @@ std::vector<typename MergePolicy::UnresolvedEntry> Sync<MergePolicy>::GetUnresol
       result.push_back(*itr);
       result.back().messages_contents.assign(1, *found);
       std::iter_swap(found, std::begin(itr->messages_contents));
-      assert(itr->key.action != a/c transfer);
     }
     ++itr;
   }

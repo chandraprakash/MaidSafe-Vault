@@ -19,6 +19,7 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/db_key.h"
 
+
 namespace maidsafe {
 
 namespace vault { struct MetadataValue; }

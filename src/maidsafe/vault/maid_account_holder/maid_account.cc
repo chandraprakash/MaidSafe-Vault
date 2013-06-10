@@ -138,7 +138,7 @@ bool MaidAccount::ApplyAccountTransfer(const NodeId& source_id,
   for (int i(0); i != proto_maid_account_details.serialised_unresolved_entry_size(); ++i) {
     MaidAccountUnresolvedEntry entry(MaidAccountUnresolvedEntry::serialised_type(
         NonEmptyString(proto_maid_account_details.serialised_unresolved_entry(i))));
-    if (!sync_.AddUnresolvedEntry(entry).empty() && entry.messages_contents.front().value)
+    if (sync_.AddUnresolvedEntry(entry) && entry.messages_contents.front().value)
       total_put_data_ += *entry.messages_contents.front().value;
   }
 

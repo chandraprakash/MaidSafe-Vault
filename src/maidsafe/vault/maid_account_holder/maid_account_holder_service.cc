@@ -259,6 +259,7 @@ void MaidAccountHolderService::FinalisePmidRegistration(
                                          pmid_registration_op->pmid_registration);
     }
     send_reply(maidsafe_error(CommonErrors::success));
+    Sync(pmid_registration_op->public_maid->name());
     UpdatePmidTotals(pmid_registration_op->public_maid->name());
   }
   catch(const maidsafe_error& error) {

@@ -36,7 +36,7 @@ class Sync : public MergePolicy {
   Sync& operator=(Sync&& other);
   // This is called when receiving a Sync message from a peer or this node.  If the
   // entry becomes resolved it is returned.
-  boost::optional<typename MergePolicy::ResolvedEntry> AddUnresolvedEntry(
+  typename MergePolicy::ResolvedEntry AddUnresolvedEntry(
       const typename MergePolicy::UnresolvedEntry& entry);
   // This is called directly once an action has been decided as valid in the MAHolder, but before
   // syncing the unresolved entry to the peers.  This won't resolve the entry (even if it's the last
