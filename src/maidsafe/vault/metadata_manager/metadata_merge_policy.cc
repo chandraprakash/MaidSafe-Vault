@@ -41,9 +41,7 @@ MetadataMergePolicy& MetadataMergePolicy::operator=(MetadataMergePolicy&& other)
 void MetadataMergePolicy::Merge(const UnresolvedEntry& unresolved_entry) {
   if (unresolved_entry.key.second == nfs::MessageAction::kPut &&
       !unresolved_entry.dont_add_to_db) {
-    auto data_size(GetDataSize(unresolved_entry));
-    if (!data_size)
-      MergePut(unresolved_entry.key.first.name(), data_size);
+    MergePut(unresolved_entry.key.first.name(), GetDataSize(unresolved_entry));
   } else if (unresolved_entry.key.second == nfs::MessageAction::kDelete) {
 //    MergeDelete(unresolved_entry.key.first, serialised_db_value);
   } else {
@@ -83,9 +81,11 @@ int MetadataMergePolicy::GetDataSize(
 }
 
 void MetadataMergePolicy::MergePut(const DataNameVariant& data_name, int data_size) {
-  Metadata metadata(data_name, metadata_db_, data_size);
-  ++(*metadata.value_.subscribers);
-  metadata.SaveChanges(metadata_db_);
+  if (data_size != 0) {
+    Metadata metadata(data_name, metadata_db_, data_size);
+    ++(*metadata.value_.subscribers);
+    metadata.SaveChanges(metadata_db_);
+  }
 }
 
 void MetadataMergePolicy::MergeDelete(const DataNameVariant& /*data_name*/,
@@ -93,13 +93,55 @@ void MetadataMergePolicy::MergeDelete(const DataNameVariant& /*data_name*/,
 }
 
 MetadataMergePolicy::UnresolvedEntries MetadataMergePolicy::MergeRecordTransfer(
-    const UnresolvedEntry& /*unresolved_entry*/) {
+    const UnresolvedEntry& unresolved_entry) {
   UnresolvedEntries extra_unresolved_data;
-  // merge size
-  // merge subscribers
-  // merge online_pmid_name
-  // merge offline_pmid_name
+  // Merge Size
+  int size(GetDataSize(unresolved_entry));
+  MetadataValue metadata_value(size);
+  // Merge subscribers
+  auto min_subscriber(std::min_element(
+      unresolved_entry.messages_contents.begin(),
+      unresolved_entry.messages_contents.end(),
+      [](const UnresolvedEntry::MessageContent& lhs, const UnresolvedEntry::MessageContent& rhs) {
+          return (*lhs.value->subscribers < *rhs.value->subscribers);
+      }));
+  *metadata_value.subscribers = *min_subscriber->value->subscribers;
+
+  // Creating unresolved entry for unresolved subscribers
+  for (const auto& message_content : unresolved_entry.messages_contents) {
+    if (*message_content.value->subscribers > *metadata_value.subscribers) {
+      auto extra_subscribers(*message_content.value->subscribers - *metadata_value.subscribers);
+      MetadataValue incremental_value(metadata_value.data_size);
+      *incremental_value.subscribers = 1;
+      for (auto i(0); i != extra_subscribers; ++i) {  // FIXME need different entry id ?
+        UnresolvedEntry entry(std::make_pair(unresolved_entry.key.first, nfs::MessageAction::kPut),
+                              incremental_value, message_content.peer_id);
+        extra_unresolved_data.push_back(entry);
+      }
+    }
+  }
+
+  // Online pmid_name
+  std::map<PmidName, uint16_t> online_pmid_frequencies;
+  std::map<PmidName, uint16_t> offline_pmid_frequencies;
+  for (const auto& message_content : unresolved_entry.messages_contents) {
+    for (const auto& online_pmid_name : message_content.value->online_pmid_name)
+      ++online_pmid_frequencies[online_pmid_name];
+    for (const auto& offline_pmid_name : message_content.value->offline_pmid_name)
+      ++offline_pmid_frequencies[offline_pmid_name];
+  }
+  for (const auto& i : online_pmid_frequencies)
+    if (i.second >= routing::Parameters::node_group_size - 1U)
+      metadata_value.online_pmid_name.insert(i.first);
+
+  for (const auto& i : offline_pmid_frequencies)
+    if (i.second >= routing::Parameters::node_group_size - 1U)
+      metadata_value.offline_pmid_name.insert(i.first);
   // FIXME need to return unresolved pmid_names to Ping/Get data
+  // Updating DB
+  Metadata metadata(unresolved_entry.key.first.name(), metadata_db_, metadata_value.data_size);
+  // FIXME free function needed to merge db value with resolved db value
+  metadata.SaveChanges(metadata_db_);
   return extra_unresolved_data;
 }
 
