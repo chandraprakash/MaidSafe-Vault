@@ -32,7 +32,7 @@ namespace vault {
 namespace detail {
 
 boost::filesystem::path GetPath(const std::string& data_name,
-                                int32_t data_type_enum_value,
+                                uint32_t data_type_enum_value,
                                 const boost::filesystem::path& root);
 
 template<typename Data>

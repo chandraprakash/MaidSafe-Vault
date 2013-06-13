@@ -35,16 +35,17 @@ class MaidAccountMergePolicy {
  public:
   typedef MaidAccountHolder::DbKey DbKey;
   typedef AccountDb Database;
+  typedef MaidAccountUnresolvedEntryVariant UnresolvedEntryVariant;
   explicit MaidAccountMergePolicy(AccountDb* account_db);
   MaidAccountMergePolicy(MaidAccountMergePolicy&& other);
   MaidAccountMergePolicy& operator=(MaidAccountMergePolicy&& other);
   // This flags a "Put" entry in 'unresolved_data_' as not to be added to the db.
   template<typename Data>
-  int32_t AllowDelete(const typename Data::name_type& name);
+  MaidAccountHolder::Cost AllowDelete(const typename Data::name_type& name);
 
  protected:
-  typedef std::vector<MaidAccountUnresolvedEntryVariant> UnresolvedEntries;
-  typedef std::vector<MaidAccountUnresolvedEntryVariant>::iterator UnresolvedEntriesItr;
+  typedef std::vector<UnresolvedEntryVariant> UnresolvedEntries;
+  typedef std::vector<UnresolvedEntryVariant>::iterator UnresolvedEntriesItr;
 
   template<nfs::MessageAction action>
   void Merge(const MaidAccountUnresolvedEntry<action>& unresolved_entry);
@@ -53,16 +54,17 @@ class MaidAccountMergePolicy {
   AccountDb* account_db_;
 
  private:
-  typedef TaggedValue<int32_t, struct AverageCostTag> AverageCost;
-  typedef TaggedValue<int32_t, struct CountTag> Count;
+  typedef TaggedValue<MaidAccountHolder::Cost, struct AverageCostTag> AverageCost;
+  typedef TaggedValue<MaidAccountHolder::Cost, struct CountTag> Count;
   typedef std::pair<AverageCost, Count> DbValue;
 
   MaidAccountMergePolicy(const MaidAccountMergePolicy&);
   MaidAccountMergePolicy& operator=(const MaidAccountMergePolicy&);
 
-  UnresolvedEntry::Value MergedCost(const UnresolvedEntry& unresolved_entry) const;
+  MaidAccountHolder::Cost MergedCost(
+      const MaidAccountUnresolvedEntry<nfs::MessageAction::kPut>& unresolved_put) const;
   void MergePut(const DataNameVariant& data_name,
-                UnresolvedEntry::Value cost,
+                MaidAccountHolder::Cost cost,
                 const NonEmptyString& serialised_db_value);
   void MergeDelete(const DataNameVariant& data_name, const NonEmptyString& serialised_db_value);
   NonEmptyString SerialiseDbValue(DbValue db_value) const;
@@ -71,7 +73,7 @@ class MaidAccountMergePolicy {
 };
 
 template<typename Data>
-int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) {
+MaidAccountHolder::Cost MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name) {
   auto serialised_db_value(GetFromDb(name));
   Count current_count(0);
   AverageCost size(0);
@@ -85,7 +87,7 @@ int32_t MaidAccountMergePolicy::AllowDelete(const typename Data::name_type& name
   DataNameVariant name_as_variant(name);
   auto itr(std::begin(unresolved_data_));
   auto last_put_still_to_be_added_to_db(std::end(unresolved_data_));
-  int32_t pending_puts(0), pending_deletes(0);
+  MaidAccountHolder::Cost pending_puts(0), pending_deletes(0);
 
   while (itr != std::end(unresolved_data_)) {
     if ((*itr).key.first == name_as_variant) {

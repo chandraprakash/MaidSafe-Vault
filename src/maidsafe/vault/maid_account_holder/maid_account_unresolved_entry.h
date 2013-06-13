@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "boost/optional/optional.hpp"
+#include "boost/variant/variant.hpp"
 
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/data_types/data_name_variant.h"
@@ -35,27 +36,27 @@ namespace vault {
 template<>
 struct ActionAttributes<MaidAccountHolder, nfs::MessageAction::kPut> {
   NodeId peer_id;
-  int32_t entry_id;
-  int32_t cost;
+  UnresolvedEntryId entry_id;
+  typename MaidAccountHolder::Cost cost;
 };
 
 template<>
 struct ActionAttributes<MaidAccountHolder, nfs::MessageAction::kDelete> {
   NodeId peer_id;
-  int32_t entry_id;
+  UnresolvedEntryId entry_id;
 };
 
 template<>
 struct ActionAttributes<MaidAccountHolder, nfs::MessageAction::kRegisterPmid> {
   NodeId peer_id;
-  int32_t entry_id;
+  UnresolvedEntryId entry_id;
   PmidName pmid_name;
 };
 
 template<>
 struct ActionAttributes<MaidAccountHolder, nfs::MessageAction::kUnregisterPmid> {
   NodeId peer_id;
-  int32_t entry_id;
+  UnresolvedEntryId entry_id;
   PmidName pmid_name;
 };
 

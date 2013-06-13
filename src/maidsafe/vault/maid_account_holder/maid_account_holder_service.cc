@@ -27,17 +27,17 @@ namespace vault {
 namespace detail {
 
 template<>
-int32_t EstimateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&) {
+MaidAccountHolder::Cost EstimateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&) {
   return 0;
 }
 
 template<>
-int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&) {
+MaidAccountHolder::Cost EstimateCost<passport::PublicMaid>(const passport::PublicMaid&) {
   return 0;
 }
 
 template<>
-int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&) {
+MaidAccountHolder::Cost EstimateCost<passport::PublicPmid>(const passport::PublicPmid&) {
   return 0;
 }
 

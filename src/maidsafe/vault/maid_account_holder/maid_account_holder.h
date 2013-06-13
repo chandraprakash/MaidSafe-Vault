@@ -27,6 +27,7 @@ namespace nfs {
 template<>
 struct PersonaTypes<Persona::kMaidAccountHolder> {
   typedef vault::DbKey DbKey;
+  typedef int32_t Cost;
   static const Persona persona = Persona::kMaidAccountHolder;
 };
 

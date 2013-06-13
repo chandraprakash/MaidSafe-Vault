@@ -28,7 +28,7 @@ const size_t MetadataHandler::kSyncTriggerCount_(1);
 namespace detail {
 
 fs::path GetPath(const std::string& data_name,
-                 int32_t data_type_enum_value,
+                 uint32_t data_type_enum_value,
                  const fs::path& root) {
   return root / (EncodeToBase32(data_name) + std::to_string(data_type_enum_value));
 }

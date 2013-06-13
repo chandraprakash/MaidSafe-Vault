@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_VAULT_UNRESOLVED_ENTRY_CORE_FIELDS_H_
 #define MAIDSAFE_VAULT_UNRESOLVED_ENTRY_CORE_FIELDS_H_
 
+#include <cstdint>
 #include <vector>
 
 #include "maidsafe/common/config.h"
@@ -20,6 +21,8 @@
 namespace maidsafe {
 
 namespace vault {
+
+typedef int32_t UnresolvedEntryId;
 
 template<typename PersonaTypes, nfs::MessageAction action>
 struct ActionAttributes;

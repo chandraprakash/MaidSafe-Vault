@@ -68,7 +68,7 @@ class MaidAccountHandler {
   void IncrementSyncAttempts(const MaidName& account_name);
 
   // Data operations
-  MaidAccount::Status AllowPut(const MaidName& account_name, int32_t cost) const;
+  MaidAccount::Status AllowPut(const MaidName& account_name, MaidAccountHolder::Cost cost) const;
 
   // Only Maid and Anmaid can create account; for all others this is a no-op.
   typedef std::true_type AllowedAccountCreationType;

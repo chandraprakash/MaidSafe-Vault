@@ -43,22 +43,22 @@ template<>
 struct can_create_account<passport::PublicMaid> : public std::true_type {};
 
 template<typename Data>
-int32_t EstimateCost(const Data& data) {
+MaidAccountHolder::Cost EstimateCost(const Data& data) {
   static_assert(!std::is_same<Data, passport::PublicAnmaid>::value, "Cost of Anmaid should be 0.");
   static_assert(!std::is_same<Data, passport::PublicMaid>::value, "Cost of Maid should be 0.");
   static_assert(!std::is_same<Data, passport::PublicPmid>::value, "Cost of Pmid should be 0.");
-  return static_cast<int32_t>(MaidAccountHolderService::DefaultPaymentFactor() *
-                              data.content.string().size());
+  return static_cast<MaidAccountHolder::Cost>(MaidAccountHolderService::DefaultPaymentFactor() *
+                                              data.content.string().size());
 }
 
 template<>
-int32_t EstimateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&);
+MaidAccountHolder::Cost EstimateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&);
 
 template<>
-int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&);
+MaidAccountHolder::Cost EstimateCost<passport::PublicMaid>(const passport::PublicMaid&);
 
 template<>
-int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
+MaidAccountHolder::Cost EstimateCost<passport::PublicPmid>(const passport::PublicPmid&);
 
 MaidName GetMaidAccountName(const nfs::Message& message);
 
@@ -70,7 +70,7 @@ typename Data::name_type GetDataName(const nfs::Message& message) {
 
 template<typename Data, nfs::MessageAction action>
 MaidAccountUnresolvedEntry CreateUnresolvedEntry(const nfs::Message& message,
-                                                 int32_t cost,
+                                                 MaidAccountHolder::Cost cost,
                                                  const NodeId& this_id) {
   static_assert(action == nfs::MessageAction::kPut || action == nfs::MessageAction::kDelete,
                 "Action must be either kPut of kDelete.");
@@ -219,7 +219,7 @@ void MaidAccountHolderService::HandlePutResult(const nfs::Reply& overall_result,
 
 template<typename Data, nfs::MessageAction action>
 void MaidAccountHolderService::AddLocalUnresolvedEntryThenSync(const nfs::Message& message,
-                                                               int32_t cost) {
+                                                               MaidAccountHolder::Cost cost) {
   auto account_name(detail::GetMaidAccountName(message));
   auto unresolved_entry(detail::CreateUnresolvedEntry<Data, action>(message, cost,
                                                                     routing_.kNodeId()));
